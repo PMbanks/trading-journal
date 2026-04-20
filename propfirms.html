@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propfirms Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d0d0d;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: #333;
+            color: #e0e0e0;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: background 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .back-btn:hover { background: #444; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: linear-gradient(145deg, #1a1a1a, #242424);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            color: #888;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .summary-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #9c27b0;
+        }
+
+        .add-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .add-section h2 {
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 6px;
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+
+        input, select {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #9c27b0;
+        }
+
+        .submit-btn {
+            background: #9c27b0;
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+
+        .submit-btn:hover { background: #7b1fa2; }
+
+        .accounts-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .accounts-section h2 {
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .account-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: #333;
+            border: none;
+            color: #888;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .tab-btn.active {
+            background: #9c27b0;
+            color: #fff;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #444;
+        }
+
+        .account-card {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .account-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+        }
+
+        .account-card.active::before { background: #2196f3; }
+        .account-card.passed::before { background: #00c853; }
+        .account-card.failed::before { background: #ff5252; }
+
+        .account-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .account-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .account-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-active { background: #1565c0; color: #fff; }
+        .status-passed { background: #00c853; color: #fff; }
+        .status-failed { background: #ff5252; color: #fff; }
+
+        .account-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-item h4 {
+            color: #888;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .info-item p {
+            color: #e0e0e0;
+            font-size: 0.95rem;
+        }
+
+        .timer {
+            background: #1a1a1a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .timer-label {
+            color: #888;
+            font-size: 0.75rem;
+            display: block;
+        }
+
+        .timer-value {
+            color: #ff9800;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .progress-section {
+            margin-top: 15px;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+
+        .progress-labels span:first-child { color: #ff5252; }
+        .progress-labels span:last-child { color: #00c853; }
+
+        .progress-bar {
+            height: 12px;
+            background: #1a1a1a;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s;
+        }
+
+        .progress-fill.positive { background: linear-gradient(90deg, #4caf50, #00c853); }
+        .progress-fill.negative { background: linear-gradient(90deg, #ff5252, #f44336); }
+
+        .progress-marker {
+            position: absolute;
+            top: -5px;
+            width: 2px;
+            height: 22px;
+            background: #fff;
+        }
+
+        .breach-marker { background: #ff5252; }
+        .target-marker { background: #00c853; }
+
+        .account-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: #333;
+            border: none;
+            color: #e0e0e0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.3s;
+        }
+
+        .action-btn:hover { background: #444; }
+        .action-btn.pass { background: #00c853; }
+        .action-btn.pass:hover { background: #009624; }
+        .action-btn.fail { background: #ff5252; }
+        .action-btn.fail:hover { background: #c62828; }
+
+        .balance-input {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 120px;
+            font-size: 0.9rem;
+        }
+
+        .reason-box {
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid #ff5252;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .reason-box h5 {
+            color: #ff5252;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .reason-box p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .no-accounts {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 25px;
+            max-width: 500px;
+            width: 100%;
+            margin: 20px auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal h2 {
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .close-btn {
+            background: #333;
+            border: none;
+            color: #fff;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.3rem;
+        }
+
+        .close-btn:hover { background: #444; }
+
+        .modal form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        textarea {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 12px;
+            border-radius: 8px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #9c27b0;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.5rem; }
+            .form-grid { grid-template-columns: 1fr; }
+            .account-info { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💼 Propfirms Manager</h1>
+            <a href="index.html" class="back-btn">← Back to Menu</a>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h3>Total Accounts</h3>
+                <div class="value" id="totalAccounts">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Active</h3>
+                <div class="value" style="color: #2196f3;" id="activeAccounts">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Passed</h3>
+                <div class="value" style="color: #00c853;" id="passedAccounts">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Failed</h3>
+                <div class="value" style="color: #ff5252;" id="failedAccounts">0</div>
+            </div>
+            <div class="summary-card">
+                <h3>Total Invested</h3>
+                <div class="value" id="totalInvested">$0</div>
+            </div>
+        </div>
+
+        <div class="add-section">
+            <h2>Add New Account</h2>
+            <form id="addAccountForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="propfirmName">Propfirm Name</label>
+                        <input type="text" id="propfirmName" list="propfirmList" required placeholder="e.g., FTMO, MyForexFunds">
+                        <datalist id="propfirmList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="accountType">Account Type</label>
+                        <select id="accountType" required onchange="toggleDurationField()">
+                            <option value="evaluation">Evaluation</option>
+                            <option value="funded">Funded Account</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="accountSize">Account Size</label>
+                        <select id="accountSize" required onchange="updateStartingBalance()">
+                            <option value="25000">$25,000</option>
+                            <option value="50000">$50,000</option>
+                            <option value="100000">$100,000</option>
+                            <option value="200000">$200,000</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pricePaid">Price Paid ($)</label>
+                        <input type="number" id="pricePaid" step="0.01" required placeholder="e.g., 149.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="purchaseDate">Purchase Date</label>
+                        <input type="date" id="purchaseDate" required>
+                    </div>
+                    <div class="form-group" id="durationGroup">
+                        <label for="duration">Duration (Days)</label>
+                        <input type="number" id="duration" value="30" placeholder="30">
+                    </div>
+                    <div class="form-group">
+                        <label for="profitTarget">Profit Target (%)</label>
+                        <input type="number" id="profitTarget" value="6" step="0.1" placeholder="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="maxDrawdown">Max Drawdown (%)</label>
+                        <input type="number" id="maxDrawdown" value="4" step="0.1" placeholder="4">
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">Add Account</button>
+            </form>
+        </div>
+
+        <div class="accounts-section">
+            <h2>Account History</h2>
+            
+            <div class="account-tabs">
+                <button class="tab-btn active" onclick="filterAccounts('all')">All</button>
+                <button class="tab-btn" onclick="filterAccounts('active')">Active</button>
+                <button class="tab-btn" onclick="filterAccounts('passed')">Passed</button>
+                <button class="tab-btn" onclick="filterAccounts('failed')">Failed</button>
+                <button class="tab-btn" onclick="filterAccounts('evaluation')">Evaluations</button>
+                <button class="tab-btn" onclick="filterAccounts('funded')">Funded</button>
+            </div>
+
+            <div id="accountsList"></div>
+            <div class="no-accounts" id="noAccounts">No accounts added yet</div>
+        </div>
+    </div>
+
+    <!-- Status Change Modal -->
+    <div class="modal-overlay" id="statusModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="statusModalTitle">Mark as Failed</h2>
+                <button class="close-btn" onclick="closeStatusModal()">×</button>
+            </div>
+            <form id="statusForm">
+                <input type="hidden" id="statusAccountId">
+                <input type="hidden" id="newStatus">
+                
+                <div class="form-group">
+                    <label for="statusDate">Date</label>
+                    <input type="date" id="statusDate" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="statusReason">Reason (What happened?)</label>
+                    <textarea id="statusReason" placeholder="e.g., Not following rules, bad streak, bad management, took bad trades..."></textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn">Confirm</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let accounts = JSON.parse(localStorage.getItem('propfirmAccounts')) || [];
+        let propfirmNames = JSON.parse(localStorage.getItem('propfirmNames')) || [];
+        let currentFilter = 'all';
+        document.getElementById('purchaseDate').valueAsDate = new Date();
+
+        function updatePropfirmList() {
+            const datalist = document.getElementById('propfirmList');
+            datalist.innerHTML = propfirmNames.map(name => `<option value="${name}">`).join('');
+        }
+
+        function toggleDurationField() {
+            const type = document.getElementById('accountType').value;
+            const durationGroup = document.getElementById('durationGroup');
+            durationGroup.style.display = type === 'funded' ? 'none' : 'block';
+        }
+
+        function updateStartingBalance() {
+            // Just for reference, starting balance = account size
+        }
+
+        document.getElementById('addAccountForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('propfirmName').value.trim();
+            if (!propfirmNames.includes(name)) {
+                propfirmNames.push(name);
+                localStorage.setItem('propfirmNames', JSON.stringify(propfirmNames));
+                updatePropfirmList();
+            }
+
+            const size = parseInt(document.getElementById('accountSize').value);
+            const profitTarget = parseFloat(document.getElementById('profitTarget').value);
+            const maxDrawdown = parseFloat(document.getElementById('maxDrawdown').value);
+
+            const account = {
+                id: Date.now().toString(),
+                name: name,
+                type: document.getElementById('accountType').value,
+                size: size,
+                pricePaid: parseFloat(document.getElementById('pricePaid').value),
+                purchaseDate: document.getElementById('purchaseDate').value,
+                duration: document.getElementById('accountType').value === 'funded' ? null : parseInt(document.getElementById('duration').value || 30),
+                profitTarget: profitTarget,
+                maxDrawdown: maxDrawdown,
+                status: 'active',
+                balance: size,
+                profit: 0,
+                passedDate: null,
+                failedDate: null,
+                reason: null
+            };
+
+            accounts.push(account);
+            saveAccounts();
+            renderAccounts();
+            updateStats();
+            this.reset();
+            document.getElementById('purchaseDate').valueAsDate = new Date();
+            document.getElementById('duration').value = 30;
+            document.getElementById('profitTarget').value = 6;
+            document.getElementById('maxDrawdown').value = 4;
+        });
+
+        function updateBalance(id, newBalance) {
+            const account = accounts.find(a => a.id === id);
+            if (account) {
+                account.balance = parseFloat(newBalance) || account.size;
+                account.profit = account.balance - account.size;
+                saveAccounts();
+                renderAccounts();
+            }
+        }
+
+        function addMoney(id) {
+            const account = accounts.find(a => a.id === id);
+            if (account) {
+                const amount = prompt('Enter amount to add (use negative to remove):');
+                if (amount !== null) {
+                    const amt = parseFloat(amount);
+                    if (!isNaN(amt)) {
+                        account.balance += amt;
+                        account.profit = account.balance - account.size;
+                        saveAccounts();
+                        renderAccounts();
+                    }
+                }
+            }
+        }
+
+        function openStatusModal(id, status) {
+            document.getElementById('statusAccountId').value = id;
+            document.getElementById('newStatus').value = status;
+            document.getElementById('statusDate').valueAsDate = new Date();
+            document.getElementById('statusModalTitle').textContent = status === 'passed' ? 'Mark as Passed' : 'Mark as Failed';
+            document.getElementById('statusModal').classList.add('active');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.remove('active');
+        }
+
+        document.getElementById('statusForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('statusAccountId').value;
+            const status = document.getElementById('newStatus').value;
+            const date = document.getElementById('statusDate').value;
+            const reason = document.getElementById('statusReason').value;
+
+            const account = accounts.find(a => a.id === id);
+            if (account) {
+                account.status = status;
+                account[status + 'Date'] = date;
+                account.reason = reason;
+                saveAccounts();
+                renderAccounts();
+                updateStats();
+                closeStatusModal();
+            }
+        });
+
+        function deleteAccount(id) {
+            if (confirm('Are you sure you want to delete this account?')) {
+                accounts = accounts.filter(a => a.id !== id);
+                saveAccounts();
+                renderAccounts();
+                updateStats();
+            }
+        }
+
+        function saveAccounts() {
+            localStorage.setItem('propfirmAccounts', JSON.stringify(accounts));
+        }
+
+        function filterAccounts(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderAccounts();
+        }
+
+        function renderAccounts() {
+            const container = document.getElementById('accountsList');
+            container.innerHTML = '';
+
+            let filtered = accounts;
+            if (currentFilter === 'active') filtered = accounts.filter(a => a.status === 'active');
+            else if (currentFilter === 'passed') filtered = accounts.filter(a => a.status === 'passed');
+            else if (currentFilter === 'failed') filtered = accounts.filter(a => a.status === 'failed');
+            else if (currentFilter === 'evaluation') filtered = accounts.filter(a => a.type === 'evaluation');
+            else if (currentFilter === 'funded') filtered = accounts.filter(a => a.type === 'funded');
+
+            document.getElementById('noAccounts').style.display = filtered.length === 0 ? 'block' : 'none';
+
+            filtered.sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate));
+
+            filtered.forEach(account => {
+                const daysLeft = calculateDaysLeft(account);
+                const progressPercent = ((account.profit / account.size) * 100).toFixed(2);
+                const isPositive = account.profit >= 0;
+
+                const card = document.createElement('div');
+                card.className = `account-card ${account.status}`;
+
+                let html = `
+                    <div class="account-card-header">
+                        <div class="account-name">${account.name}</div>
+                        <span class="account-status status-${account.status}">
+                            ${account.status.charAt(0).toUpperCase() + account.status.slice(1)}
+                        </span>
+                    </div>
+                    <div class="account-info">
+                        <div class="info-item">
+                            <h4>Account Type</h4>
+                            <p>${account.type === 'evaluation' ? 'Evaluation' : 'Funded Account'}</p>
+                        </div>
+                        <div class="info-item">
+                            <h4>Size</h4>
+                            <p>$${account.size.toLocaleString()}</p>
+                        </div>
+                        <div class="info-item">
+                            <h4>Price Paid</h4>
+                            <p>$${account.pricePaid.toFixed(2)}</p>
+                        </div>
+                        <div class="info-item">
+                            <h4>Purchase Date</h4>
+                            <p>${formatDate(account.purchaseDate)}</p>
+                        </div>
+                `;
+
+                if (account.status === 'passed' && account.passedDate) {
+                    html += `
+                        <div class="info-item">
+                            <h4>Passed Date</h4>
+                            <p>${formatDate(account.passedDate)}</p>
+                        </div>
+                    `;
+                }
+
+                if (account.status === 'failed' && account.failedDate) {
+                    html += `
+                        <div class="info-item">
+                            <h4>Failed Date</h4>
+                            <p>${formatDate(account.failedDate)}</p>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+
+                // Timer for active evaluation accounts
+                if (account.status === 'active' && account.type === 'evaluation' && daysLeft !== null) {
+                    html += `
+                        <div class="timer">
+                            <span class="timer-label">Days Remaining</span>
+                            <span class="timer-value">${daysLeft > 0 ? daysLeft : 'EXPIRED'}</span>
+                        </div>
+                    `;
+                }
+
+                // Progress bar for active accounts
+                if (account.status === 'active') {
+                    const profitTargetX = 50 + (account.profitTarget / 10) * 50;
+                    const drawdownX = 50 - (account.maxDrawdown / 10) * 50;
+                    
+                    html += `
+                        <div class="progress-section">
+                            <div class="progress-labels">
+                                <span>-${account.maxDrawdown}%</span>
+                                <span>Start: $${account.size.toLocaleString()}</span>
+                                <span>+${account.profitTarget}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill ${isPositive ? 'positive' : 'negative'}" 
+                                     style="width: ${Math.min(100, Math.max(0, 50 + parseFloat(progressPercent) * 5))}%"></div>
+                                <div class="progress-marker breach-marker" style="left: ${drawdownX}%"></div>
+                                <div class="progress-marker target-marker" style="left: ${profitTargetX}%"></div>
+                            </div>
+                        </div>
+                        <div class="account-info" style="margin-top: 15px;">
+                            <div class="info-item">
+                                <h4>Current Balance</h4>
+                                <p>
+                                    <input type="number" class="balance-input" value="${account.balance}" 
+                                           onchange="updateBalance('${account.id}', this.value)">
+                                </p>
+                            </div>
+                            <div class="info-item">
+                                <h4>Current P/L</h4>
+                                <p style="color: ${isPositive ? '#00c853' : '#ff5252'}">
+                                    ${isPositive ? '+' : ''}$${account.profit.toFixed(2)} (${isPositive ? '+' : ''}${progressPercent}%)
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Reason for failed/passed
+                if ((account.status === 'passed' || account.status === 'failed') && account.reason) {
+                    html += `
+                        <div class="reason-box">
+                            <h5>${account.status === 'passed' ? 'How you passed' : 'Why you failed'}</h5>
+                            <p>${account.reason}</p>
+                        </div>
+                    `;
+                }
+
+                // Actions
+                html += '<div class="account-actions">';
+                
+                if (account.status === 'active') {
+                    html += `
+                        <button class="action-btn" onclick="addMoney('${account.id}')">± Add/Remove Money</button>
+                        <button class="action-btn pass" onclick="openStatusModal('${account.id}', 'passed')">✓ Mark Passed</button>
+                        <button class="action-btn fail" onclick="openStatusModal('${account.id}', 'failed')">✗ Mark Failed</button>
+                    `;
+                }
+
+                html += `<button class="action-btn" onclick="deleteAccount('${account.id}')">🗑 Delete</button>`;
+                html += '</div>';
+
+                card.innerHTML = html;
+                container.appendChild(card);
+            });
+        }
+
+        function calculateDaysLeft(account) {
+            if (!account.duration) return null;
+            const purchase = new Date(account.purchaseDate);
+            const endDate = new Date(purchase.getTime() + account.duration * 24 * 60 * 60 * 1000);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diff = Math.ceil((endDate - today) / (24 * 60 * 60 * 1000));
+            return diff;
+        }
+
+        function updateStats() {
+            const total = accounts.length;
+            const active = accounts.filter(a => a.status === 'active').length;
+            const passed = accounts.filter(a => a.status === 'passed').length;
+            const failed = accounts.filter(a => a.status === 'failed').length;
+            const invested = accounts.reduce((sum, a) => sum + a.pricePaid, 0);
+
+            document.getElementById('totalAccounts').textContent = total;
+            document.getElementById('activeAccounts').textContent = active;
+            document.getElementById('passedAccounts').textContent = passed;
+            document.getElementById('failedAccounts').textContent = failed;
+            document.getElementById('totalInvested').textContent = '$' + invested.toFixed(2);
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Initialize
+        updatePropfirmList();
+        renderAccounts();
+        updateStats();
+    </script>
+</body>
+</html>

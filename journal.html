@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Journal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d0d0d;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: #333;
+            color: #e0e0e0;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: background 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .back-btn:hover { background: #444; }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, #1a1a1a, #242424);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #888;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .stat-card.profit .value { color: #00c853; }
+        .stat-card.loss .value { color: #ff5252; }
+        .stat-card.neutral .value { color: #2196f3; }
+
+        .add-trade-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .add-trade-section h2 {
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .time-note {
+            background: #1a237e;
+            border: 1px solid #283593;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            color: #8ab4d8;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 6px;
+            color: #aaa;
+            font-size: 0.8rem;
+        }
+
+        input, select, textarea {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+
+        .form-group.full-width { grid-column: 1 / -1; }
+
+        textarea { resize: vertical; min-height: 80px; }
+        textarea.large { min-height: 100px; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .form-section-title {
+            color: #2196f3;
+            font-size: 0.9rem;
+            margin: 20px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #333;
+        }
+
+        .image-upload-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .image-upload {
+            border: 2px dashed #333;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #0d0d0d;
+            position: relative;
+        }
+
+        .image-upload:hover { border-color: #2196f3; }
+        .image-upload input { display: none; }
+        .image-upload p { color: #666; font-size: 0.85rem; margin-top: 10px; }
+
+        .image-preview-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .image-actions button {
+            background: #333;
+            color: #e0e0e0;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        .image-actions button:hover { background: #444; }
+        .image-actions button.remove { background: #d32f2f; }
+        .image-actions button.remove:hover { background: #b71c1c; }
+
+        .submit-btn {
+            background: #2196f3;
+            color: #fff;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 600;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .submit-btn:hover { background: #1976d2; }
+
+        .trades-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+            overflow-x: auto;
+        }
+
+        .trades-section h2 {
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { color: #888; font-size: 0.75rem; text-transform: uppercase; background: #0d0d0d; }
+        tr:hover { background: #242424; }
+
+        .profit-value { color: #00c853; font-weight: 600; }
+        .loss-value { color: #ff5252; font-weight: 600; }
+
+        .tier-badge { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .tier-aplus { background: #ffd700; color: #000; }
+        .tier-a { background: #c0c0c0; color: #000; }
+        .tier-b { background: #cd7f32; color: #000; }
+
+        .session-tag { padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 500; }
+        .session-London { background: #1a237e; color: #fff; }
+        .session-Asia { background: #b71c1c; color: #fff; }
+        .session-NewYork { background: #1b5e20; color: #fff; }
+
+        .view-btn {
+            background: #2196f3;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-right: 5px;
+        }
+
+        .view-btn:hover { background: #1976d2; }
+
+        .delete-btn {
+            background: #d32f2f;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .delete-btn:hover { background: #b71c1c; }
+
+        .no-trades { text-align: center; color: #666; padding: 40px; font-style: italic; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin: 20px auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .modal h2 { color: #fff; font-size: 1.4rem; }
+
+        .close-btn {
+            background: #333;
+            border: none;
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .close-btn:hover { background: #444; }
+
+        .trade-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .detail-item {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .detail-item h4 { color: #888; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 8px; }
+        .detail-item p { color: #e0e0e0; font-size: 1rem; }
+        .detail-item.full-width { grid-column: 1 / -1; }
+
+        .detail-item img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .profit-large { color: #00c853; font-size: 1.5rem !important; font-weight: 700; }
+        .loss-large { color: #ff5252; font-size: 1.5rem !important; font-weight: 700; }
+
+        /* Image Zoom Modal */
+        .zoom-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .zoom-modal.active { display: flex; }
+
+        .zoom-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
+        .zoom-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .zoom-controls button {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .zoom-controls button:hover { background: #444; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.4rem; }
+            .form-grid { grid-template-columns: 1fr; }
+            .stat-card .value { font-size: 1.3rem; }
+            .modal { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Trading Journal</h1>
+            <a href="index.html" class="back-btn">← Back to Menu</a>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card neutral">
+                <h3>Total Trades</h3>
+                <div class="value" id="totalTrades">0</div>
+            </div>
+            <div class="stat-card profit" id="profitCard">
+                <h3>Total Profit/Loss</h3>
+                <div class="value" id="totalProfit">$0.00</div>
+            </div>
+            <div class="stat-card neutral">
+                <h3>Win Rate</h3>
+                <div class="value" id="winRate">0%</div>
+            </div>
+            <div class="stat-card neutral">
+                <h3>Avg Trade</h3>
+                <div class="value" id="avgTrade">$0.00</div>
+            </div>
+        </div>
+
+        <div class="add-trade-section">
+            <h2>Add New Trade</h2>
+            <div class="time-note">⏰ All times are in <strong>New York Time (EST/EDT)</strong></div>
+            <form id="tradeForm">
+                <p class="form-section-title">Basic Information</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="profitLoss">Profit/Loss ($)</label>
+                        <input type="number" id="profitLoss" step="0.01" required placeholder="150.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="tradeDate">Date</label>
+                        <input type="date" id="tradeDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="symbol">Symbol</label>
+                        <select id="symbol" required>
+                            <option value="NQ">NQ (Nasdaq)</option>
+                            <option value="ES">ES (S&P 500)</option>
+                            <option value="XAU">XAU (Gold)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tier">Tier</label>
+                        <select id="tier" required>
+                            <option value="A+">Tier A+</option>
+                            <option value="A">Tier A</option>
+                            <option value="B">Tier B</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="form-section-title">Time & Session</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="tradeHour">Trade Hour (NY Time)</label>
+                        <input type="time" id="tradeHour" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="duration">Duration</label>
+                        <input type="text" id="duration" placeholder="e.g., 2h 30m">
+                    </div>
+                    <div class="form-group">
+                        <label for="session">Session</label>
+                        <select id="session" required>
+                            <option value="New York">New York</option>
+                            <option value="London">London</option>
+                            <option value="Asia">Asia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tradeType">Type</label>
+                        <select id="tradeType">
+                            <option value="Long">Long</option>
+                            <option value="Short">Short</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="form-section-title">Trade Details</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="rr">Risk/Reward</label>
+                        <input type="text" id="rr" placeholder="e.g., 1:3">
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="confirmations">Confirmations (Why you entered)</label>
+                    <textarea id="confirmations" class="large" placeholder="Describe your entry reasons and confirmations..."></textarea>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="improvement">What could you improve? How was today's PA?</label>
+                    <textarea id="improvement" placeholder="Lessons learned, market conditions, areas for improvement..."></textarea>
+                </div>
+
+                <p class="form-section-title">Trade Images</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Trade Setup Screenshot</label>
+                        <div class="image-upload-container">
+                            <div class="image-upload" id="tradeImageUpload" onclick="document.getElementById('tradeImage').click()">
+                                <span id="tradeImageText">📷 Click to upload</span>
+                                <input type="file" id="tradeImage" accept="image/*" onchange="handleImageUpload(this, 'trade')">
+                            </div>
+                            <div id="tradeImagePreviewContainer" style="display:none;">
+                                <img id="tradeImagePreview" class="image-preview">
+                                <div class="image-actions">
+                                    <button type="button" onclick="document.getElementById('tradeImage').click()">Change</button>
+                                    <button type="button" class="remove" onclick="removeImage('trade')">Remove</button>
+                                    <button type="button" onclick="zoomImage('trade')">🔍 Zoom</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Proof of Execution</label>
+                        <div class="image-upload-container">
+                            <div class="image-upload" id="proofImageUpload" onclick="document.getElementById('proofImage').click()">
+                                <span id="proofImageText">📷 Click to upload</span>
+                                <input type="file" id="proofImage" accept="image/*" onchange="handleImageUpload(this, 'proof')">
+                            </div>
+                            <div id="proofImagePreviewContainer" style="display:none;">
+                                <img id="proofImagePreview" class="image-preview">
+                                <div class="image-actions">
+                                    <button type="button" onclick="document.getElementById('proofImage').click()">Change</button>
+                                    <button type="button" class="remove" onclick="removeImage('proof')">Remove</button>
+                                    <button type="button" onclick="zoomImage('proof')">🔍 Zoom</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Add Trade</button>
+            </form>
+        </div>
+
+        <div class="trades-section">
+            <h2>Trade History</h2>
+            <table id="tradesTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Symbol</th>
+                        <th>Tier</th>
+                        <th>Session</th>
+                        <th>Type</th>
+                        <th>P/L</th>
+                        <th>RR</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tradesBody"></tbody>
+            </table>
+            <div class="no-trades" id="noTrades">No trades recorded yet. Add your first trade above!</div>
+        </div>
+    </div>
+
+    <!-- Trade Detail Modal -->
+    <div class="modal-overlay" id="tradeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Trade Details</h2>
+                <button class="close-btn" onclick="closeTradeModal()">×</button>
+            </div>
+            <div id="tradeModalContent"></div>
+        </div>
+    </div>
+
+    <!-- Image Zoom Modal -->
+    <div class="zoom-modal" id="zoomModal" onclick="closeZoomModal()">
+        <img id="zoomImage" src="" alt="Zoomed Image">
+        <div class="zoom-controls" onclick="event.stopPropagation()">
+            <button onclick="zoomIn()">+ Zoom In</button>
+            <button onclick="zoomOut()">- Zoom Out</button>
+            <button onclick="resetZoom()">Reset</button>
+            <button onclick="closeZoomModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let trades = JSON.parse(localStorage.getItem('trades')) || [];
+        document.getElementById('tradeDate').valueAsDate = new Date();
+
+        let currentZoom = 1;
+
+        function handleImageUpload(input, type) {
+            const preview = document.getElementById(type + 'ImagePreview');
+            const container = document.getElementById(type + 'ImagePreviewContainer');
+            const uploadDiv = document.getElementById(type + 'ImageUpload');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    container.style.display = 'block';
+                    uploadDiv.style.display = 'none';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function removeImage(type) {
+            const input = document.getElementById(type + 'Image');
+            const container = document.getElementById(type + 'ImagePreviewContainer');
+            const uploadDiv = document.getElementById(type + 'ImageUpload');
+            
+            input.value = '';
+            container.style.display = 'none';
+            uploadDiv.style.display = 'block';
+        }
+
+        function zoomImage(type) {
+            const preview = document.getElementById(type + 'ImagePreview');
+            const zoomImg = document.getElementById('zoomImage');
+            zoomImg.src = preview.src;
+            currentZoom = 1;
+            zoomImg.style.transform = 'scale(1)';
+            document.getElementById('zoomModal').classList.add('active');
+        }
+
+        function zoomIn() {
+            currentZoom += 0.25;
+            document.getElementById('zoomImage').style.transform = 'scale(' + currentZoom + ')';
+        }
+
+        function zoomOut() {
+            if (currentZoom > 0.5) {
+                currentZoom -= 0.25;
+                document.getElementById('zoomImage').style.transform = 'scale(' + currentZoom + ')';
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            document.getElementById('zoomImage').style.transform = 'scale(1)';
+        }
+
+        function closeZoomModal() {
+            document.getElementById('zoomModal').classList.remove('active');
+        }
+
+        document.getElementById('tradeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const tradeImage = document.getElementById('tradeImage');
+            const proofImage = document.getElementById('proofImage');
+            const tradePreview = document.getElementById('tradeImagePreview');
+            const proofPreview = document.getElementById('proofImagePreview');
+
+            const trade = {
+                id: Date.now(),
+                profitLoss: parseFloat(document.getElementById('profitLoss').value),
+                date: document.getElementById('tradeDate').value,
+                symbol: document.getElementById('symbol').value,
+                tier: document.getElementById('tier').value,
+                tradeHour: document.getElementById('tradeHour').value,
+                duration: document.getElementById('duration').value || '-',
+                session: document.getElementById('session').value,
+                rr: document.getElementById('rr').value || '-',
+                type: document.getElementById('tradeType').value,
+                confirmations: document.getElementById('confirmations').value || '-',
+                improvement: document.getElementById('improvement').value || '-',
+                tradeImage: tradeImage.files[0] ? tradePreview.src : null,
+                proofImage: proofImage.files[0] ? proofPreview.src : null
+            };
+
+            trades.unshift(trade);
+            saveTrades();
+            renderTrades();
+            updateStats();
+            resetForm();
+        });
+
+        function resetForm() {
+            document.getElementById('tradeForm').reset();
+            document.getElementById('tradeDate').valueAsDate = new Date();
+            removeImage('trade');
+            removeImage('proof');
+        }
+
+        function deleteTrade(id) {
+            if (confirm('Are you sure you want to delete this trade?')) {
+                trades = trades.filter(trade => trade.id !== id);
+                saveTrades();
+                renderTrades();
+                updateStats();
+            }
+        }
+
+        function viewTrade(id) {
+            const trade = trades.find(t => t.id === id);
+            if (!trade) return;
+
+            const sign = trade.profitLoss >= 0 ? '+' : '';
+            const plClass = trade.profitLoss >= 0 ? 'profit-large' : 'loss-large';
+            const tierClass = trade.tier === 'A+' ? 'tier-aplus' : (trade.tier === 'A' ? 'tier-a' : 'tier-b');
+
+            document.getElementById('modalTitle').textContent = 
+                `${trade.symbol} ${trade.type} - ${formatDate(trade.date)}`;
+
+            let content = `
+                <div class="trade-detail-grid">
+                    <div class="detail-item">
+                        <h4>Profit/Loss</h4>
+                        <p class="${plClass}">${sign}$${trade.profitLoss.toFixed(2)}</p>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Symbol</h4>
+                        <p>${trade.symbol}</p>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Tier</h4>
+                        <p><span class="tier-badge ${tierClass}">Tier ${trade.tier}</span></p>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Session</h4>
+                        <p><span class="session-tag session-${trade.session.replace(' ', '')}">${trade.session}</span></p>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Time (NY)</h4>
+                        <p>${trade.tradeHour || '-'}</p>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Duration</h4>
+                        <p>${trade.duration}</p>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Risk/Reward</h4>
+                        <p>${trade.rr}</p>
+                    </div>
+                    <div class="detail-item">
+                        <h4>Type</h4>
+                        <p>${trade.type}</p>
+                    </div>
+                    <div class="detail-item full-width">
+                        <h4>Confirmations (Why you entered)</h4>
+                        <p style="white-space: pre-wrap;">${trade.confirmations}</p>
+                    </div>
+                    <div class="detail-item full-width">
+                        <h4>What could you improve? How was today's PA?</h4>
+                        <p style="white-space: pre-wrap;">${trade.improvement}</p>
+                    </div>
+            `;
+
+            if (trade.tradeImage) {
+                content += `
+                    <div class="detail-item">
+                        <h4>Trade Setup</h4>
+                        <img src="${trade.tradeImage}" alt="Trade Setup" onclick="showFullImage('${trade.tradeImage}')">
+                    </div>
+                `;
+            }
+
+            if (trade.proofImage) {
+                content += `
+                    <div class="detail-item">
+                        <h4>Proof of Execution</h4>
+                        <img src="${trade.proofImage}" alt="Proof" onclick="showFullImage('${trade.proofImage}')">
+                    </div>
+                `;
+            }
+
+            content += '</div>';
+            document.getElementById('tradeModalContent').innerHTML = content;
+            document.getElementById('tradeModal').classList.add('active');
+        }
+
+        function showFullImage(src) {
+            const zoomImg = document.getElementById('zoomImage');
+            zoomImg.src = src;
+            currentZoom = 1;
+            zoomImg.style.transform = 'scale(1)';
+            document.getElementById('zoomModal').classList.add('active');
+        }
+
+        function closeTradeModal() {
+            document.getElementById('tradeModal').classList.remove('active');
+        }
+
+        function saveTrades() {
+            localStorage.setItem('trades', JSON.stringify(trades));
+        }
+
+        function renderTrades() {
+            const tbody = document.getElementById('tradesBody');
+            tbody.innerHTML = '';
+
+            if (trades.length === 0) {
+                document.getElementById('noTrades').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('noTrades').style.display = 'none';
+
+            trades.forEach(trade => {
+                const row = document.createElement('tr');
+                const plClass = trade.profitLoss >= 0 ? 'profit-value' : 'loss-value';
+                const sign = trade.profitLoss >= 0 ? '+' : '';
+                const tierClass = trade.tier === 'A+' ? 'tier-aplus' : 
+                                 (trade.tier === 'A' ? 'tier-a' : 'tier-b');
+                const sessionClass = `session-${trade.session.replace(' ', '')}`;
+
+                row.innerHTML = `
+                    <td>${formatDate(trade.date)}</td>
+                    <td><strong>${trade.symbol}</strong></td>
+                    <td><span class="tier-badge ${tierClass}">${trade.tier}</span></td>
+                    <td><span class="session-tag ${sessionClass}">${trade.session}</span></td>
+                    <td>${trade.type}</td>
+                    <td class="${plClass}">${sign}$${trade.profitLoss.toFixed(2)}</td>
+                    <td>${trade.rr}</td>
+                    <td>
+                        <button class="view-btn" onclick="viewTrade(${trade.id})">View</button>
+                        <button class="delete-btn" onclick="deleteTrade(${trade.id})">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStats() {
+            const totalTrades = trades.length;
+            const totalProfit = trades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+            const winningTrades = trades.filter(trade => trade.profitLoss > 0).length;
+            const winRate = totalTrades > 0 ? (winningTrades / totalTrades * 100) : 0;
+            const avgTrade = totalTrades > 0 ? totalProfit / totalTrades : 0;
+
+            document.getElementById('totalTrades').textContent = totalTrades;
+
+            const profitEl = document.getElementById('totalProfit');
+            const sign = totalProfit >= 0 ? '+' : '';
+            profitEl.textContent = `${sign}$${totalProfit.toFixed(2)}`;
+
+            const profitCard = document.getElementById('profitCard');
+            profitCard.classList.remove('profit', 'loss');
+            profitCard.classList.add(totalProfit >= 0 ? 'profit' : 'loss');
+
+            document.getElementById('winRate').textContent = `${winRate.toFixed(1)}%`;
+            document.getElementById('avgTrade').textContent = `${sign}$${avgTrade.toFixed(2)}`;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        document.getElementById('tradeModal').addEventListener('click', function(e) {
+            if (e.target === this) closeTradeModal();
+        });
+
+        renderTrades();
+        updateStats();
+    </script>
+</body>
+</html>
