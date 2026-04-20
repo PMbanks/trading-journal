@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d0d0d;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 2rem;
+        }
+
+        .back-btn {
+            background: #333;
+            color: #e0e0e0;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover { background: #444; }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background: #2196f3;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: background 0.3s;
+        }
+
+        .nav-btn:hover { background: #1976d2; }
+
+        .month-year {
+            font-size: 1.5rem;
+            font-weight: 600;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .day-header {
+            text-align: center;
+            padding: 10px;
+            color: #888;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .day-cell {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 80px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .day-cell:hover { border-color: #2196f3; }
+
+        .day-cell.today {
+            border-color: #2196f3;
+            background: linear-gradient(145deg, #1a237e, #1a1a1a);
+        }
+
+        .day-cell.other-month {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .day-number {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .day-profit {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .day-profit.positive { color: #00c853; }
+        .day-profit.negative { color: #ff5252; }
+        .day-profit.neutral { color: #888; }
+
+        .day-trades-count {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .day-summary {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .summary-card {
+            background: linear-gradient(145deg, #1a1a1a, #242424);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            color: #888;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .summary-card .value { font-size: 1.4rem; font-weight: 700; }
+        .summary-card.profit .value { color: #00c853; }
+        .summary-card.loss .value { color: #ff5252; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.5rem; }
+            .calendar-grid { gap: 5px; }
+            .day-cell { min-height: 60px; padding: 8px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Trading Calendar</h1>
+            <a href="index.html" class="back-btn">← Back to Menu</a>
+        </div>
+
+        <div class="calendar-nav">
+            <button class="nav-btn" onclick="previousMonth()">←</button>
+            <div class="month-year" id="monthYear">January 2025</div>
+            <button class="nav-btn" onclick="nextMonth()">→</button>
+        </div>
+
+        <div class="day-summary" id="monthSummary">
+            <div class="summary-card">
+                <h3>Month Trades</h3>
+                <div class="value" id="monthTrades">0</div>
+            </div>
+            <div class="summary-card profit">
+                <h3>Month P/L</h3>
+                <div class="value" id="monthPL">$0.00</div>
+            </div>
+            <div class="summary-card">
+                <h3>Win Rate</h3>
+                <div class="value" id="monthWinRate">0%</div>
+            </div>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="day-header">Sun</div>
+            <div class="day-header">Mon</div>
+            <div class="day-header">Tue</div>
+            <div class="day-header">Wed</div>
+            <div class="day-header">Thu</div>
+            <div class="day-header">Fri</div>
+            <div class="day-header">Sat</div>
+        </div>
+    </div>
+
+    <script>
+        let trades = JSON.parse(localStorage.getItem('trades')) || [];
+        let currentDate = new Date();
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+            
+            document.getElementById('monthYear').textContent = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            
+            const calendarGrid = document.getElementById('calendarGrid');
+            const dayHeaders = calendarGrid.querySelectorAll('.day-header');
+            calendarGrid.innerHTML = '';
+            dayHeaders.forEach(header => calendarGrid.appendChild(header));
+            
+            // Empty cells for days before the 1st
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'day-cell other-month';
+                calendarGrid.appendChild(emptyCell);
+            }
+            
+            // Days of the month
+            let monthTrades = 0;
+            let monthPL = 0;
+            let monthWins = 0;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === day) {
+                    cell.classList.add('today');
+                }
+                
+                const dayTrades = trades.filter(t => t.date === dateStr);
+                const dayPL = dayTrades.reduce((sum, t) => sum + t.profitLoss, 0);
+                
+                if (dayTrades.length > 0) {
+                    monthTrades += dayTrades.length;
+                    monthPL += dayPL;
+                    monthWins += dayTrades.filter(t => t.profitLoss > 0).length;
+                }
+                
+                const profitClass = dayPL > 0 ? 'positive' : (dayPL < 0 ? 'negative' : 'neutral');
+                const sign = dayPL >= 0 ? '+' : '';
+                
+                cell.innerHTML = `
+                    <div class="day-number">${day}</div>
+                    ${dayTrades.length > 0 ? `
+                        <div class="day-profit ${profitClass}">${sign}$${dayPL.toFixed(0)}</div>
+                        <div class="day-trades-count">${dayTrades.length} trade${dayTrades.length > 1 ? 's' : ''}</div>
+                    ` : ''}
+                `;
+                
+                calendarGrid.appendChild(cell);
+            }
+            
+            // Update summary
+            document.getElementById('monthTrades').textContent = monthTrades;
+            const plSign = monthPL >= 0 ? '+' : '';
+            document.getElementById('monthPL').textContent = `${plSign}$${monthPL.toFixed(2)}`;
+            document.getElementById('monthWinRate').textContent = monthTrades > 0 
+                ? `${((monthWins / monthTrades) * 100).toFixed(0)}%` 
+                : '0%';
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        renderCalendar();
+    </script>
+</body>
+</html>
