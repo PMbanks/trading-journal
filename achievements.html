@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Calendar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d0d0d; --bg-secondary: #1a1a1a; --bg-card: #1e1e1e;
+            --text-primary: #e0e0e0; --text-secondary: #888; --border-color: #333;
+            --accent-blue: #2196f3; --accent-green: #00c853; --accent-red: #ff5252; --accent-warn: #ff9800;
+        }
+        .theme-white { --bg-primary:#fff; --bg-secondary:#f8f8f8; --bg-card:#fff; --text-primary:#1a1a1a; --text-secondary:#555; --border-color:#ddd; }
+        .theme-darkblue { --bg-primary:#0a1929; --bg-secondary:#132f4c; --bg-card:#1a3a5c; --text-primary:#e0e0e0; --text-secondary:#8ab4d8; --border-color:#1e3a5f; }
+        .theme-black { --bg-primary:#0d0d0d; --bg-secondary:#1a1a1a; --bg-card:#1e1e1e; --text-primary:#e0e0e0; --text-secondary:#888; --border-color:#333; }
+        .theme-purple { --bg-primary:#1a0a2e; --bg-secondary:#2d1b4e; --bg-card:#3d2b5e; --text-primary:#e8d5f5; --text-secondary:#b794d4; --border-color:#4a2c7a; }
+        .theme-darkred { --bg-primary:#1a0505; --bg-secondary:#2b0a0a; --bg-card:#3d1212; --text-primary:#ffe6e6; --text-secondary:#a87b7b; --border-color:#5c1a1a; }
+        .theme-darkbrown { --bg-primary:#1e120e; --bg-secondary:#331f17; --bg-card:#4a2d22; --text-primary:#e8dcd4; --text-secondary:#a89480; --border-color:#5c3a26; }
+        
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary);
+            min-height: 100vh; padding: 20px; transition: all 0.5s ease;
+        }
+        .loading-screen {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg-primary);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loading-screen.hidden { opacity:0; visibility:hidden; }
+        .loader { width:50px; height:50px; border:4px solid var(--border-color); border-top:4px solid var(--accent-blue); border-radius:50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .container { max-width: 1200px; margin: 0 auto; opacity: 0; animation: fadeInUp 0.6s ease forwards; animation-delay: 0.2s; }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(20px);} to { opacity:1; transform:translateY(0);} }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; position: relative; }
+        h1 { color: var(--text-primary); font-size: 1.8rem; display: flex; align-items: center; gap: 10px; font-weight: 700; }
+        .back-btn { background: var(--bg-secondary); color: var(--text-primary); text-decoration: none; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border-color); transition: all 0.3s ease; }
+        .back-btn:hover { background: var(--bg-card); transform: translateY(-2px); }
+        
+        /* Polymarket Earnings Link */
+        .earnings-link {
+            position: absolute; top: 0; right: 0;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            color: var(--text-primary); padding: 8px 14px; border-radius: 8px;
+            font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 6px;
+            transition: all 0.3s ease; z-index: 10;
+        }
+        .earnings-link:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); border-color: var(--accent-blue); }
+        
+        .calendar-nav { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .nav-btn { background: linear-gradient(135deg, #2196f3, #1976d2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; transition: all 0.3s ease; }
+        .nav-btn:hover { transform: scale(1.1); }
+        .month-year { font-size: 1.4rem; font-weight: 700; min-width: 180px; text-align: center; }
+        
+        /* Stats Row */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 8px; text-align: center; transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+        .stat-card h3 { color: var(--text-secondary); font-size: 0.6rem; margin-bottom: 5px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        .stat-card .value { font-size: 1.1rem; font-weight: 700; margin-bottom: 2px; }
+        .stat-card .sub-value { font-size: 0.65rem; color: var(--text-secondary); font-weight: 500; }
+        .stat-card.profit .value { color: #00c853; }
+        .stat-card.loss .value { color: #ff5252; }
+        .best-day-card .value { color: #00e676; }
+        .worst-day-card .value { color: #ff5252; }
+        .winrate-card { grid-column: span 2; }
+        .winrate-card h3 { margin-bottom: 8px; }
+        .donut-container { position: relative; width: 60px; height: 60px; margin: 0 auto; }
+        .donut-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1rem; font-weight: 700; }
+        .avg-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 8px; }
+        .avg-card h3 { color: var(--text-secondary); font-size: 0.6rem; margin-bottom: 8px; text-transform: uppercase; font-weight: 600; }
+        .avg-bar { display: flex; height: 22px; border-radius: 11px; overflow: hidden; background: var(--bg-primary); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        .avg-wins, .avg-losses { display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; transition: all 0.5s ease; }
+        .avg-wins { background: linear-gradient(90deg, #00c853, #00e676); color: #000; }
+        .avg-losses { background: linear-gradient(90deg, #ff5252, #ff1744); color: #fff; }
+        .avg-values { display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.7rem; }
+        .avg-values .win { color: #00c853; font-weight: 600; }
+        .avg-values .loss { color: #ff5252; font-weight: 600; }
+        
+        /* Performance Chart Section */
+        .chart-section {
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 20px; margin-bottom: 25px;
+        }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .chart-title { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .chart-filters { display: flex; gap: 8px; }
+        .chart-filter {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            color: var(--text-secondary); padding: 6px 12px; border-radius: 6px;
+            font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+        }
+        .chart-filter.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .chart-container { height: 200px; position: relative; }
+        
+        /* Calendar Grid - 8 Columns */
+        .calendar-wrapper { overflow-x: auto; padding-bottom: 10px; margin-bottom: 25px; }
+        .calendar-grid { 
+            display: grid; 
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px; 
+            min-width: 800px;
+        }
+        .day-header { text-align: center; padding: 10px 5px; color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .day-header.weekend { color: #ff5252; }
+        .day-header.summary { color: var(--accent-blue); }
+        
+        .day-cell {
+            background: linear-gradient(145deg, var(--bg-secondary), var(--bg-card));
+            border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 12px 8px; min-height: 110px; cursor: pointer; transition: all 0.3s ease; 
+            display: flex; flex-direction: column; position: relative;
+        }
+        .day-cell:hover:not(.weekend):not(.other-month):not(.weekly-summary) { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); border-color: #2196f3; }
+        .day-cell.today { border: 2px solid #2196f3; box-shadow: 0 0 15px rgba(33, 150, 243, 0.3); }
+        .day-cell.profit-day { background: linear-gradient(145deg, #0a2e0a, #0d1a0d); border-color: #00c853; }
+        .day-cell.loss-day { background: linear-gradient(145deg, #2e0a0a, #1a0d0d); border-color: #ff5252; }
+        .day-cell.weekend { background: linear-gradient(145deg, #1a1a1a, #1a1a1a); border-color: #2a2a2a; opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .day-cell.other-month { opacity: 0.35; filter: grayscale(0.6); pointer-events: auto; border-style: dashed; }
+        .day-cell.other-month:hover { opacity: 0.5; filter: grayscale(0.3); }
+        
+        .day-cell.weekly-summary {
+            cursor: default; 
+            background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+            border-color: var(--accent-blue); 
+            opacity: 0.9;
+        }
+        .day-cell.weekly-summary:hover { transform: none; box-shadow: none; border-color: var(--accent-blue); }
+        .day-cell.weekly-summary .day-number { color: var(--accent-blue); font-size: 0.85rem; }
+        
+        .day-cell.violation-day { border-color: var(--accent-warn); }
+        .day-cell.violation-day::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background:var(--accent-warn); border-radius:10px 10px 0 0; }
+        .day-number { font-weight:700; margin-bottom:4px; font-size:0.95rem; }
+        .day-cell.profit-day .day-number { color:#00c853; } 
+        .day-cell.loss-day .day-number { color:#ff5252; }
+        .day-content { flex:1; display:flex; flex-direction:column; gap:3px; }
+        .day-profit { font-size:0.8rem; font-weight:700; }
+        .day-profit.positive { color:#00c853; } 
+        .day-profit.negative { color:#ff5252; }
+        .day-trades-count { font-size:0.65rem; color:var(--text-secondary); }
+        .day-comment-indicator { font-size:0.6rem; color:var(--accent-blue); display:flex; align-items:center; gap:3px; }
+        .violation-indicator { 
+            margin-top:auto; background:rgba(255,152,0,0.15); border:1px solid var(--accent-warn); 
+            border-radius:6px; padding:4px 6px; font-size:0.65rem; color:var(--accent-warn); 
+            font-weight:600; display:flex; align-items:center; gap:4px; animation:pulse-warn 2s infinite; 
+        }
+        @keyframes pulse-warn { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
+        .weekend-label { font-size:0.6rem; color:#ff5252; text-align:center; margin-top:auto; }
+
+        /* Market Sentiment Widget */
+        .sentiment-section {
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 20px; margin-top: 25px;
+        }
+        .sentiment-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .sentiment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .sentiment-card {
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 15px; text-align: center;
+        }
+        .sentiment-value { font-size: 1.5rem; font-weight: 700; margin: 5px 0; }
+        .sentiment-value.bullish { color: var(--accent-green); }
+        .sentiment-value.bearish { color: var(--accent-red); }
+        .sentiment-value.neutral { color: var(--accent-warn); }
+        .sentiment-label { font-size: 0.8rem; color: var(--text-secondary); }
+
+        /* Modal & Zoom */
+        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:flex-start; padding:20px; overflow-y:auto; backdrop-filter:blur(5px); }
+        .modal-overlay.active { display:flex; }
+        .modal { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:16px; padding:25px; max-width:850px; width:100%; margin:20px auto; animation:modalSlide 0.3s ease forwards; }
+        @keyframes modalSlide { from { opacity:0; transform:translateY(-20px);} to { opacity:1; transform:translateY(0);} }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid var(--border-color); }
+        .modal h2 { color:var(--text-primary); font-size:1.2rem; }
+        .close-btn { background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); width:35px; height:35px; border-radius:50%; cursor:pointer; font-size:1.3rem; transition:all 0.3s ease; }
+        .close-btn:hover { background:#ff5252; color:#fff; transform:rotate(90deg); }
+        .section-title { color:var(--accent-blue); font-size:0.85rem; margin:15px 0 8px 0; padding-bottom:4px; border-bottom:1px solid var(--border-color); font-weight:600; }
+        .comment-textarea { width:100%; min-height:80px; padding:12px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); border-radius:10px; font-family:inherit; font-size:0.85rem; resize:vertical; transition:all 0.3s ease; }
+        .comment-textarea:focus { outline:none; border-color:var(--accent-blue); box-shadow:0 0 0 2px rgba(33,150,243,0.2); }
+        .save-comment-btn { margin-top:10px; background:linear-gradient(135deg,var(--accent-blue),#1976d2); color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:600; transition:all 0.3s ease; font-size:0.85rem; }
+        .save-comment-btn:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(33,150,243,0.4); }
+        .violations-list { background:rgba(255,152,0,0.1); border:1px solid var(--accent-warn); border-radius:8px; padding:12px; margin-bottom:15px; font-size:0.85rem; color:var(--accent-warn); }
+        .trade-card { background:var(--bg-primary); border:1px solid var(--border-color); border-radius:10px; padding:14px; margin-bottom:12px; }
+        .trade-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+        .trade-card-title { font-size:1rem; font-weight:600; } 
+        .trade-card-pl { font-size:1.1rem; font-weight:700; }
+        .trade-card-pl.positive { color:#00c853; } 
+        .trade-card-pl.negative { color:#ff5252; }
+        .trade-card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:8px; margin-top:10px; }
+        .trade-card-item { background:var(--bg-secondary); padding:10px; border-radius:6px; }
+        .trade-card-item h5 { color:var(--text-secondary); font-size:0.65rem; margin-bottom:3px; text-transform:uppercase; }
+        .trade-card-item p { color:var(--text-primary); font-size:0.85rem; }
+        .tier-badge { padding:3px 8px; border-radius:4px; font-size:0.65rem; font-weight:600; }
+        .tier-aplus { background:linear-gradient(135deg,#ffd700,#ffca28); color:#000; }
+        .tier-a { background:linear-gradient(135deg,#c0c0c0,#e0e0e0); color:#000; }
+        .tier-b { background:linear-gradient(135deg,#cd7f32,#d4a574); color:#000; }
+        .session-tag { padding:3px 8px; border-radius:4px; font-size:0.65rem; font-weight:500; }
+        .session-London { background:linear-gradient(135deg,#1a237e,#283593); color:#fff; }
+        .session-Asia { background:linear-gradient(135deg,#b71c1c,#c62828); color:#fff; }
+        .session-NewYork { background:linear-gradient(135deg,#1b5e20,#2e7d32); color:#fff; }
+        .trade-card-notes { margin-top:10px; } 
+        .trade-card-notes h5 { color:var(--text-secondary); font-size:0.7rem; margin-bottom:4px; }
+        .trade-card-notes p { color:#aaa; font-size:0.8rem; white-space:pre-wrap; }
+        .trade-card-images { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+        .trade-card-images img { max-width:120px; max-height:80px; border-radius:8px; cursor:pointer; transition:all 0.3s ease; }
+        .trade-card-images img:hover { transform:scale(1.05); }
+        .no-content { color:#666; text-align:center; padding:15px; font-style:italic; font-size:0.9rem; }
+        .weekend-modal { background:rgba(255,82,82,0.1); border:1px solid #ff5252; border-radius:14px; padding:30px; text-align:center; }
+        .weekend-modal h3 { color:#ff5252; margin-bottom:10px; font-size:1.2rem; } 
+        .weekend-modal p { color:var(--text-secondary); }
+        .zoom-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; justify-content:center; align-items:center; padding:20px; }
+        .zoom-modal.active { display:flex; } 
+        .zoom-modal img { max-width:90%; max-height:90%; border-radius:12px; transition:transform 0.3s ease; }
+        .zoom-controls { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:8px; }
+        .zoom-controls button { background:#333; color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:0.9rem; transition:all 0.3s ease; }
+        .zoom-controls button:hover { background:#444; transform:translateY(-2px); }
+        
+        @media(max-width:900px) { 
+            .stats-row { grid-template-columns:repeat(2,1fr); } 
+            .winrate-card,.avg-card { grid-column:span 2; }
+            .sentiment-grid { grid-template-columns: 1fr; }
+        }
+        @media(max-width:600px) { 
+            h1 { font-size:1.3rem; } 
+            .calendar-grid { gap:4px; } 
+            .day-cell { min-height:90px; padding:8px 4px; } 
+            .day-header { font-size:0.6rem; padding:6px 2px; } 
+            .day-profit { font-size:0.7rem; } 
+            .modal { padding:15px; } 
+            .stats-row { grid-template-columns:1fr; } 
+            .winrate-card,.avg-card { grid-column:span 1; }
+            .chart-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader"></div>
+        <div class="loader-text">Loading Calendar...</div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📅 Trading Calendar</h1>
+            <a href="https://polymarket.com/earnings" target="_blank" class="earnings-link" title="Open Polymarket Earnings Calendar">
+                📊 New Calendar ↗
+            </a>
+            <div class="nav-buttons"><a href="index.html" class="back-btn">← Menu</a></div>
+        </div>
+
+        <div class="calendar-nav">
+            <button class="nav-btn" onclick="previousMonth()">←</button>
+            <div class="month-year" id="monthYear">January 2025</div>
+            <button class="nav-btn" onclick="nextMonth()">→</button>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card"><h3>Total Trades</h3><div class="value" id="totalTrades">0</div></div>
+            <div class="stat-card"><h3>Avg RR</h3><div class="value" id="avgRR">-</div></div>
+            <div class="stat-card profit" id="plCard"><h3>Month P/L</h3><div class="value" id="monthPL">$0.00</div></div>
+            <div class="stat-card best-day-card"><h3>📈 Best Day</h3><div class="value" id="bestDay">-</div><div class="sub-value" id="bestDayWR"></div></div>
+            <div class="stat-card worst-day-card"><h3>📉 Worst Day</h3><div class="value" id="worstDay">-</div><div class="sub-value" id="worstDayWR"></div></div>
+            <div class="stat-card winrate-card"><h3>Win Rate</h3><div class="donut-container"><canvas id="donutChart" width="60" height="60"></canvas><div class="donut-text" id="winRateText">0%</div></div></div>
+            <div class="stat-card avg-card"><h3>Avg Win / Loss</h3><div class="avg-bar"><div class="avg-wins" id="avgWinsBar" style="width: 50%;">$0</div><div class="avg-losses" id="avgLossesBar" style="width: 50%;">$0</div></div><div class="avg-values"><span class="win">Win: $<span id="avgWin">0</span></span><span class="loss">Loss: $<span id="avgLoss">0</span></span></div></div>
+        </div>
+
+        <!-- Performance Chart -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <div class="chart-title">📊 Performance Chart</div>
+                <div class="chart-filters">
+                    <button class="chart-filter active" onclick="updateChart('7d')">7 Days</button>
+                    <button class="chart-filter" onclick="updateChart('30d')">30 Days</button>
+                    <button class="chart-filter" onclick="updateChart('3m')">3 Months</button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="calendar-wrapper">
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Grid rendered by JS -->
+            </div>
+        </div>
+
+        <!-- Market Sentiment Widget -->
+        <div class="sentiment-section">
+            <div class="sentiment-title">🌐 Market Sentiment</div>
+            <div class="sentiment-grid">
+                <div class="sentiment-card">
+                    <div class="sentiment-label">S&P 500</div>
+                    <div class="sentiment-value bullish">Bullish</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary);">72% Long</div>
+                </div>
+                <div class="sentiment-card">
+                    <div class="sentiment-label">Nasdaq</div>
+                    <div class="sentiment-value neutral">Neutral</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary);">51% Long</div>
+                </div>
+                <div class="sentiment-card">
+                    <div class="sentiment-label">Gold</div>
+                    <div class="sentiment-value bearish">Bearish</div>
+                    <div style="font-size:0.75rem; color:var(--text-secondary);">38% Long</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="dayModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalDate">January 1, 2025</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div class="zoom-modal" id="zoomModal" onclick="closeZoomModal()">
+        <img id="zoomImage" src="" alt="Zoomed Image">
+        <div class="zoom-controls" onclick="event.stopPropagation()">
+            <button onclick="zoomIn()">+ Zoom In</button>
+            <button onclick="zoomOut()">- Zoom Out</button>
+            <button onclick="resetZoom()">Reset</button>
+            <button onclick="closeZoomModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 500));
+        const savedTheme = localStorage.getItem('theme') || 'black';
+        document.body.className = 'theme-' + savedTheme;
+
+        let trades = JSON.parse(localStorage.getItem('trades')) || [];
+        let dailyComments = JSON.parse(localStorage.getItem('dailyComments')) || {};
+        let currentDate = new Date();
+        let selectedDate = null;
+        let currentZoom = 1;
+        let performanceChart = null;
+        const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+        // Performance Chart
+        function initChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'P/L ($)',
+                        data: [120, -45, 230, 85, -120, 0, 0],
+                        borderColor: '#00c853',
+                        backgroundColor: 'rgba(0, 200, 83, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#00c853',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#e0e0e0',
+                            borderColor: '#333',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#888', font: { size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#888', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateChart(period) {
+            // Update filter buttons
+            document.querySelectorAll('.chart-filter').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Generate mock data based on period
+            let labels, data;
+            if (period === '7d') {
+                labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                data = [120, -45, 230, 85, -120, 0, 0];
+            } else if (period === '30d') {
+                labels = Array.from({length: 30}, (_, i) => `D${i+1}`);
+                data = Array.from({length: 30}, () => Math.random() * 300 - 100);
+            } else {
+                labels = Array.from({length: 90}, (_, i) => `D${i+1}`);
+                data = Array.from({length: 90}, () => Math.random() * 500 - 200);
+            }
+            
+            performanceChart.data.labels = labels;
+            performanceChart.data.datasets[0].data = data;
+            performanceChart.update();
+        }
+
+        function drawDonut(winPercent) {
+            const canvas = document.getElementById('donutChart');
+            const ctx = canvas.getContext('2d');
+            const cx = canvas.width/2, cy = canvas.height/2, r = 25, lw = 8;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI); ctx.strokeStyle='#333'; ctx.lineWidth=lw; ctx.stroke();
+            if(winPercent>0){ 
+                ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+(2*Math.PI*winPercent/100)); 
+                ctx.strokeStyle='#00c853'; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.stroke(); 
+            }
+            document.getElementById('winRateText').textContent = winPercent.toFixed(0) + '%';
+        }
+
+        // FIXED: Bulletproof calendar rendering with weekly P/L logic
+        function renderCalendar() {
+            const year = currentDate.getFullYear(), month = currentDate.getMonth();
+            const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            document.getElementById('monthYear').textContent = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay(); // 0=Sun, 6=Sat
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            // Render Headers (8 columns)
+            const headers = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Weekly P/L'];
+            headers.forEach((h, i) => {
+                const el = document.createElement('div');
+                el.className = `day-header ${i === 6 ? 'weekend' : ''} ${i === 7 ? 'summary' : ''}`;
+                el.textContent = h;
+                calendarGrid.appendChild(el);
+            });
+
+            // Global Stats (Current Month Only)
+            let monthTrades=0, monthPL=0, monthWins=0, monthLosses=0, totalWinAmount=0, totalLossAmount=0, rrWins=[], dayOfWeekStats={};
+
+            // Calculate grid dimensions (always complete weeks)
+            const totalCells = firstDay + daysInMonth;
+            const rows = Math.ceil(totalCells / 7);
+            
+            // Start date is the Sunday of the first week
+            const startDate = new Date(year, month, 1 - firstDay);
+
+            for (let week = 0; week < rows; week++) {
+                let weekPL = 0, weekTrades = 0;
+                let rowCells = [];
+                let hasFridayInMonth = false;
+
+                for (let dayCol = 0; dayCol < 7; dayCol++) {
+                    const cellDate = new Date(startDate);
+                    cellDate.setDate(startDate.getDate() + (week * 7 + dayCol));
+                    
+                    const dateStr = `${cellDate.getFullYear()}-${String(cellDate.getMonth()+1).padStart(2,'0')}-${String(cellDate.getDate()).padStart(2,'0')}`;
+                    const isInMonth = cellDate.getMonth() === month;
+                    const dayOfWeek = cellDate.getDay();
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                    
+                    const dayTrades = trades.filter(t => t.date === dateStr);
+                    const dayPL = dayTrades.reduce((sum, t) => sum + t.profitLoss, 0);
+                    
+                    // Check if this row has a Friday IN THE CURRENT MONTH
+                    if (dayOfWeek === 5 && isInMonth) {
+                        hasFridayInMonth = true;
+                    }
+                    
+                    // Accumulate weekly stats (includes adjacent month days for continuity)
+                    weekPL += dayPL;
+                    weekTrades += dayTrades.length;
+
+                    const cell = document.createElement('div');
+                    
+                    if (!isInMonth) {
+                        cell.className = 'day-cell other-month';
+                        let content = `<div class="day-number">${cellDate.getDate()}</div><div class="day-content">`;
+                        if (dayTrades.length > 0) {
+                            const sign = dayPL >= 0 ? '+' : '';
+                            const profitClass = dayPL >= 0 ? 'positive' : 'negative';
+                            content += `<div class="day-profit ${profitClass}">${sign}$${dayPL.toFixed(0)}</div>`;
+                            content += `<div class="day-trades-count">${dayTrades.length} trade${dayTrades.length > 1 ? 's' : ''}</div>`;
+                        }
+                        content += '</div>';
+                        cell.innerHTML = content;
+                        if (!isWeekend) cell.onclick = () => openDayModal(dateStr);
+                    } else {
+                        // Current month cell
+                        cell.className = isWeekend ? 'day-cell weekend' : 
+                                        (dayTrades.length > 0 ? (dayPL >= 0 ? 'day-cell profit-day' : 'day-cell loss-day') : 'day-cell');
+                        
+                        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === cellDate.getDate()) {
+                            cell.classList.add('today');
+                        }
+
+                        const dayViolations = dayTrades.flatMap(t => t.violations || []).filter(Boolean);
+                        const uniqueViolations = [...new Set(dayViolations)];
+                        if (uniqueViolations.length > 0) cell.classList.add('violation-day');
+
+                        let content = `<div class="day-number">${cellDate.getDate()}</div><div class="day-content">`;
+                        if (isWeekend) {
+                            content += `<div class="weekend-label">No Trading</div>`;
+                        } else {
+                            if (dayTrades.length > 0) {
+                                const sign = dayPL >= 0 ? '+' : '';
+                                const profitClass = dayPL >= 0 ? 'positive' : 'negative';
+                                content += `<div class="day-profit ${profitClass}">${sign}$${dayPL.toFixed(0)}</div>`;
+                                content += `<div class="day-trades-count">${dayTrades.length} trade${dayTrades.length > 1 ? 's' : ''}</div>`;
+                            }
+                            if (dailyComments[dateStr]) content += `<div class="day-comment-indicator">📝 Note</div>`;
+                            if (uniqueViolations.length > 0) content += `<div class="violation-indicator">⚠️ ${uniqueViolations[0].replace('⚠️ ', '')}</div>`;
+                        }
+                        content += '</div>';
+                        cell.innerHTML = content;
+                        if (!isWeekend) cell.onclick = () => openDayModal(dateStr);
+
+                        // Update month-only stats
+                        monthTrades += dayTrades.length;
+                        monthPL += dayPL;
+                        const wins = dayTrades.filter(t => t.profitLoss > 0);
+                        const losses = dayTrades.filter(t => t.profitLoss < 0);
+                        monthWins += wins.length;
+                        monthLosses += losses.length;
+
+                        if (!dayOfWeekStats[dayOfWeek]) dayOfWeekStats[dayOfWeek] = {wins: 0, total: 0};
+                        dayOfWeekStats[dayOfWeek].total += dayTrades.length;
+                        dayOfWeekStats[dayOfWeek].wins += wins.length;
+
+                        wins.forEach(t => {
+                            totalWinAmount += t.profitLoss;
+                            if (t.rr && t.rr.includes(':')) {
+                                const parts = t.rr.split(':');
+                                if (parts.length === 2) {
+                                    const rr = parseFloat(parts[1]) / parseFloat(parts[0]);
+                                    if (!isNaN(rr)) rrWins.push(rr);
+                                }
+                            }
+                        });
+                        losses.forEach(t => totalLossAmount += Math.abs(t.profitLoss));
+                    }
+                    rowCells.push(cell);
+                }
+
+                // Add weekly summary cell (8th column) - ONLY if week contains a Friday in current month
+                const weekCell = document.createElement('div');
+                weekCell.className = 'day-cell weekly-summary';
+                
+                if (hasFridayInMonth) {
+                    weekCell.innerHTML = `
+                        <div class="day-number">Week ${week + 1}</div>
+                        <div class="day-content">
+                            <div class="day-profit ${weekPL >= 0 ? 'positive' : 'negative'}">
+                                ${weekPL >= 0 ? '+' : ''}$${weekPL.toFixed(0)}
+                            </div>
+                            <div class="day-trades-count">${weekTrades} trades</div>
+                        </div>
+                    `;
+                } else {
+                    // Empty summary for partial weeks
+                    weekCell.innerHTML = `
+                        <div class="day-number">Week ${week + 1}</div>
+                        <div class="day-content">
+                            <div class="day-trades-count" style="opacity:0.3">-</div>
+                        </div>
+                    `;
+                }
+                rowCells.push(weekCell);
+
+                // Append row to grid
+                rowCells.forEach(c => calendarGrid.appendChild(c));
+            }
+
+            // Update Stats UI
+            document.getElementById('totalTrades').textContent = monthTrades;
+            document.getElementById('avgRR').textContent = rrWins.length > 0 ? '1:' + (rrWins.reduce((a,b) => a+b, 0) / rrWins.length).toFixed(1) : '-';
+            drawDonut(monthTrades > 0 ? (monthWins / monthTrades * 100) : 0);
+            
+            const plSign = monthPL >= 0 ? '+' : '';
+            document.getElementById('monthPL').textContent = `${plSign}$${monthPL.toFixed(2)}`;
+            document.getElementById('plCard').className = `stat-card ${monthPL >= 0 ? 'profit' : 'loss'}`;
+            
+            const avgWin = monthWins > 0 ? totalWinAmount / monthWins : 0;
+            const avgLoss = monthLosses > 0 ? totalLossAmount / monthLosses : 0;
+            document.getElementById('avgWin').textContent = avgWin.toFixed(0);
+            document.getElementById('avgLoss').textContent = avgLoss.toFixed(0);
+            
+            const total = avgWin + avgLoss;
+            if (total > 0) {
+                const winPercent = (avgWin / total) * 100;
+                document.getElementById('avgWinsBar').style.width = winPercent + '%';
+                document.getElementById('avgWinsBar').textContent = '$' + avgWin.toFixed(0);
+                document.getElementById('avgLossesBar').style.width = (100 - winPercent) + '%';
+                document.getElementById('avgLossesBar').textContent = '$' + avgLoss.toFixed(0);
+            }
+            
+            // Best/Worst Day Logic
+            let bestDay = '-', worstDay = '-', bestWR = -1, worstWR = 101, foundBest = false, foundWorst = false;
+            if (monthTrades > 0) {
+                for (let d = 1; d <= 5; d++) {
+                    if (dayOfWeekStats[d] && dayOfWeekStats[d].total > 0) {
+                        const wr = (dayOfWeekStats[d].wins / dayOfWeekStats[d].total) * 100;
+                        if (!foundBest || wr > bestWR) { bestWR = wr; bestDay = dayNames[d]; foundBest = true; }
+                        if (dayOfWeekStats[d].total > dayOfWeekStats[d].wins) {
+                            if (!foundWorst || wr < worstWR) { worstWR = wr; worstDay = dayNames[d]; foundWorst = true; }
+                        }
+                    }
+                }
+            }
+            document.getElementById('bestDay').textContent = foundBest ? bestDay : '-';
+            document.getElementById('bestDayWR').textContent = foundBest ? bestWR.toFixed(1) + '% WR' : '';
+            document.getElementById('worstDay').textContent = foundWorst ? worstDay : '-';
+            document.getElementById('worstDayWR').textContent = foundWorst ? worstWR.toFixed(1) + '% WR' : '';
+        }
+
+        function openDayModal(dateStr) {
+            selectedDate = dateStr;
+            const date = new Date(dateStr);
+            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            document.getElementById('modalDate').textContent = date.toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+            
+            if (isWeekend) {
+                document.getElementById('modalContent').innerHTML = `
+                    <div class="weekend-modal">
+                        <h3>🚫 Weekend - No Trading</h3>
+                        <p>Markets are closed. Review your week and plan ahead!</p>
+                    </div>
+                `;
+                document.getElementById('dayModal').classList.add('active');
+                return;
+            }
+            
+            const dayTrades = trades.filter(t => t.date === dateStr);
+            const savedComment = dailyComments[dateStr] || '';
+            const dayViolations = dayTrades.flatMap(t => t.violations || []).filter(Boolean);
+            const uniqueViolations = [...new Set(dayViolations)];
+            
+            let content = '';
+            if (uniqueViolations.length > 0) {
+                content += `<div class="violations-list"><strong>⚠️ Rules Broken This Day:</strong><br>${uniqueViolations.join('<br>')}</div>`;
+            }
+            
+            content += `
+                <p class="section-title">📝 Daily Notes</p>
+                <textarea id="dayComment" class="comment-textarea" placeholder="Market conditions, emotions, lessons learned...">${savedComment}</textarea>
+                <button class="save-comment-btn" onclick="saveDayComment()">💾 Save Notes</button>
+                <p class="section-title">📊 Trades</p>
+            `;
+            
+            if (dayTrades.length > 0) {
+                dayTrades.forEach(tr => {
+                    const ps = tr.profitLoss >= 0 ? '+' : '';
+                    const pc = tr.profitLoss >= 0 ? 'positive' : 'negative';
+                    const tc = tr.tier === 'A+' ? 'tier-aplus' : (tr.tier === 'A' ? 'tier-a' : 'tier-b');
+                    const sc = `session-${tr.session.replace(' ', '')}`;
+                    content += `
+                        <div class="trade-card">
+                            <div class="trade-card-header">
+                                <div class="trade-card-title">${tr.symbol} <span class="tier-badge ${tc}">Tier ${tr.tier}</span> <span class="session-tag ${sc}">${tr.session}</span></div>
+                                <div class="trade-card-pl ${pc}">${ps}$${tr.profitLoss.toFixed(2)}</div>
+                            </div>
+                            <div class="trade-card-grid">
+                                <div class="trade-card-item"><h5>Type</h5><p>${tr.type}</p></div>
+                                <div class="trade-card-item"><h5>Time</h5><p>${tr.tradeHour || '-'}</p></div>
+                                <div class="trade-card-item"><h5>Duration</h5><p>${tr.duration || '-'}</p></div>
+                                <div class="trade-card-item"><h5>R:R</h5><p>${tr.rr || '-'}</p></div>
+                            </div>
+                            <div class="trade-card-notes"><h5>Confirmations</h5><p>${tr.confirmations || '-'}</p></div>
+                            <div class="trade-card-notes"><h5>Improvements</h5><p>${tr.improvement || '-'}</p></div>
+                    `;
+                    if (tr.tradeImage || tr.proofImage) {
+                        content += '<div class="trade-card-images">';
+                        if (tr.tradeImage) content += `<img src="${tr.tradeImage}" alt="Setup" onclick="showFullImage('${tr.tradeImage}')">`;
+                        if (tr.proofImage) content += `<img src="${tr.proofImage}" alt="Proof" onclick="showFullImage('${tr.proofImage}')">`;
+                        content += '</div>';
+                    }
+                    content += '</div>';
+                });
+            } else {
+                content += '<p class="no-content">No trades on this day</p>';
+            }
+            
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('dayModal').classList.add('active');
+        }
+
+        function saveDayComment() {
+            dailyComments[selectedDate] = document.getElementById('dayComment').value.trim();
+            localStorage.setItem('dailyComments', JSON.stringify(dailyComments));
+            const btn = document.querySelector('.save-comment-btn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '✅ Saved!';
+            btn.style.background = '#00c853';
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.style.background = '';
+            }, 1200);
+            renderCalendar();
+        }
+
+        function closeModal() {
+            document.getElementById('dayModal').classList.remove('active');
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function showFullImage(src) {
+            document.getElementById('zoomImage').src = src;
+            currentZoom = 1;
+            document.getElementById('zoomImage').style.transform = 'scale(1)';
+            document.getElementById('zoomModal').classList.add('active');
+        }
+
+        function zoomIn() {
+            currentZoom += 0.25;
+            document.getElementById('zoomImage').style.transform = `scale(${currentZoom})`;
+        }
+
+        function zoomOut() {
+            if (currentZoom > 0.5) {
+                currentZoom -= 0.25;
+                document.getElementById('zoomImage').style.transform = `scale(${currentZoom})`;
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            document.getElementById('zoomImage').style.transform = 'scale(1)';
+        }
+
+        function closeZoomModal() {
+            document.getElementById('zoomModal').classList.remove('active');
+        }
+
+        document.getElementById('dayModal').addEventListener('click', e => {
+            if (e.target === this) closeModal();
+        });
+
+        // Initialize
+        renderCalendar();
+        initChart();
+    </script>
+</body>
+</html>
