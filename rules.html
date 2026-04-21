@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Trading Rules</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0a; --card: #1a1a1a; --text: #e0e0e0; --text2: #888; --border: #333; --accent: #2196f3; }
+        .theme-white { --bg:#fff; --card:#fff; --text:#111; --text2:#555; --border:#ddd; }
+        .theme-darkblue { --bg:#0a1929; --card:#1a3a5c; --text:#e0e0e0; --text2:#8ab4d8; --border:#1e3a5f; }
+        .theme-purple { --bg:#1a0a2e; --card:#3d2b5e; --text:#e8d5f5; --text2:#b794d4; --border:#4a2c7a; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:20px; }
+        .container { max-width:600px; margin:0 auto; }
+        .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; }
+        h1 { font-size:1.5rem; font-weight:700; }
+        .back-btn { background:var(--card); color:var(--text); text-decoration:none; padding:10px 18px; border-radius:8px; border:1px solid var(--border); transition:all 0.3s; }
+        .back-btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.3); }
+        .rules-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:25px; }
+        .rule-item { margin-bottom:20px; }
+        .rule-item label { display:block; font-size:0.85rem; font-weight:600; margin-bottom:8px; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; }
+        .rule-item select { width:100%; padding:12px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:8px; font-size:0.95rem; cursor:pointer; }
+        .rule-item select:focus { outline:none; border-color:var(--accent); }
+        .save-btn { width:100%; padding:14px; background:linear-gradient(135deg, var(--accent), #1976d2); color:#fff; border:none; border-radius:10px; font-weight:600; font-size:1rem; cursor:pointer; transition:all 0.3s; margin-top:10px; }
+        .save-btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(33,150,243,0.4); }
+        .note { margin-top:15px; font-size:0.8rem; color:var(--text2); text-align:center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Configure Trading Rules</h1>
+            <a href="index.html" class="back-btn">← Dashboard</a>
+        </div>
+        <div class="rules-card">
+            <div class="rule-item">
+                <label>Max Trades Per Day</label>
+                <select id="maxTrades"><option value="1">1 Trade</option><option value="2" selected>2 Trades</option><option value="3">3 Trades</option><option value="4">4 Trades</option><option value="5">5 Trades</option></select>
+            </div>
+            <div class="rule-item">
+                <label>Revenge Trading Cooldown</label>
+                <select id="cooldown"><option value="3">3 Minutes</option><option value="5" selected>5 Minutes</option><option value="10">10 Minutes</option><option value="15">15 Minutes</option><option value="30">30 Minutes</option></select>
+            </div>
+            <div class="rule-item">
+                <label>Max Risk Per Trade</label>
+                <select id="maxRisk"><option value="0.25">0.25%</option><option value="0.50">0.50%</option><option value="0.75">0.75%</option><option value="1" selected>1.00%</option></select>
+            </div>
+            <div class="rule-item">
+                <label>Max Daily Drawdown</label>
+                <select id="maxDrawdown"><option value="1">1%</option><option value="2">2%</option><option value="3" selected>3%</option></select>
+            </div>
+            <button class="save-btn" onclick="saveRules()">💾 Save Rules</button>
+            <p class="note">These rules will automatically check your journal entries and flag violations in the calendar.</p>
+        </div>
+    </div>
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'black';
+        document.body.className = 'theme-' + savedTheme;
+        function saveRules() {
+            const rules = {
+                maxTrades: parseInt(document.getElementById('maxTrades').value),
+                cooldown: parseInt(document.getElementById('cooldown').value),
+                maxRisk: parseFloat(document.getElementById('maxRisk').value),
+                maxDrawdown: parseInt(document.getElementById('maxDrawdown').value)
+            };
+            localStorage.setItem('tradingRules', JSON.stringify(rules));
+            const btn = document.querySelector('.save-btn');
+            btn.textContent = '✅ Saved!'; btn.style.background = '#00c853';
+            setTimeout(() => { btn.textContent = '💾 Save Rules'; btn.style.background = ''; }, 1500);
+        }
+        // Load saved rules
+        const saved = JSON.parse(localStorage.getItem('tradingRules'));
+        if (saved) {
+            document.getElementById('maxTrades').value = saved.maxTrades;
+            document.getElementById('cooldown').value = saved.cooldown;
+            document.getElementById('maxRisk').value = saved.maxRisk;
+            document.getElementById('maxDrawdown').value = saved.maxDrawdown;
+        }
+    </script>
+</body>
+</html>
