@@ -112,17 +112,53 @@
             0%, 100% { box-shadow: 0 0 8px rgba(0, 184, 255, 0.3); border-color: rgba(0, 184, 255, 0.4); }
             50% { box-shadow: 0 0 20px rgba(0, 184, 255, 0.6), 0 0 35px rgba(0, 184, 255, 0.2); border-color: var(--accent-secondary); }
         }
-        .shining-card { animation: shine-pulse 2.5s ease-in-out infinite; cursor: pointer; }
+        .shining-card { 
+            animation: shine-pulse 2.5s ease-in-out infinite; 
+            cursor: default; /* Cursor is not pointer on the whole card anymore */
+            display: flex;
+            flex-direction: column;
+        }
 
         /* Goals Grid */
-        .goal-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; flex-wrap: wrap; }
+        .goal-row { display: flex; gap: 10px; align-items: flex-end; padding: 10px 0; border-bottom: 1px solid #222; flex-wrap: wrap; }
         .goal-row:last-child { border-bottom: none; }
-        .goal-input { background: #252525; border: 1px solid #333; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.9rem; width: 80px; transition: 0.2s; }
+        .goal-input { background: #252525; border: 1px solid #333; color: #fff; padding: 8px 10px; border-radius: 6px; font-size: 0.9rem; transition: 0.2s; }
         .goal-input:focus { outline: none; border-color: var(--accent-primary); }
-        .goal-input.name { flex: 1; min-width: 110px; width: 100%; }
-        .goal-checkbox { width: 20px; height: 20px; accent-color: var(--accent-primary); cursor: pointer; margin-left: 8px; }
+        .goal-input.name { flex: 1; min-width: 100px; }
+        .goal-input.val { width: 70px; }
+        .goal-checkbox { width: 20px; height: 20px; accent-color: var(--accent-primary); cursor: pointer; margin-bottom: 8px; margin-left: 8px; }
         .goal-label { font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 4px; }
         .goal-wrap { display: flex; flex-direction: column; }
+
+        /* Weight List Widget (Scrollable) */
+        .weight-widget {
+            flex: 1;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 5px;
+        }
+        /* Custom Scrollbar for Widget */
+        .weight-widget::-webkit-scrollbar { width: 4px; }
+        .weight-widget::-webkit-scrollbar-thumb { background: var(--accent-secondary); border-radius: 4px; }
+        .weight-widget::-webkit-scrollbar-track { background: transparent; }
+
+        .weight-mini-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 10px; background: #222; border-radius: 8px; font-size: 0.85rem;
+        }
+        .weight-mini-row span:first-child { color: var(--text-secondary); }
+        .weight-mini-row span:last-child { font-weight: 700; color: var(--accent-primary); }
+        
+        .manage-btn {
+            background: transparent; border: 1px solid var(--accent-secondary); color: var(--accent-secondary); 
+            padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; align-self: flex-start;
+            margin-top: auto; width: fit-content;
+        }
+        .manage-btn:hover { background: var(--accent-secondary); color: #000; }
 
         /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
@@ -190,7 +226,7 @@
 
         <!-- Editable Monthly Goals -->
         <div class="card goals-card" style="grid-column: span 2;">
-            <h3>🎯 Monthly Goals (KG)</h3>
+            <h3>🎯 Monthly Goals</h3>
             <div id="goals-list"></div>
         </div>
 
@@ -217,11 +253,17 @@
             </div>
         </div>
 
-        <!-- Shining Weight History Card -->
-        <div class="card shining-card" id="weightHistoryCard" onclick="openWeightModal()">
+        <!-- Shining Weight History Card with SCROLLABLE LIST -->
+        <div class="card shining-card" id="weightHistoryCard">
             <h3>⚖️ Weight History</h3>
-            <p>Track fasting weight & monitor progress</p>
-            <div id="weight-preview" style="margin-top:15px; font-weight:700; color:var(--accent-secondary); text-align:center;">Click to set your first weight...</div>
+            <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">Scroll to see all past entries.</p>
+            
+            <div id="weight-list-widget" class="weight-widget">
+                <!-- Entries injected here by JS -->
+                <div style="text-align:center; color:var(--text-secondary); padding:20px;">Loading history...</div>
+            </div>
+
+            <button class="manage-btn" onclick="openWeightModal()">Manage / Edit</button>
         </div>
 
         <div class="card action-square">
@@ -231,7 +273,7 @@
         </div>
     </div>
 
-    <!-- Weight History Modal -->
+    <!-- Weight History Modal (For Adding/Editing) -->
     <div id="weightModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeWeightModal()">&times;</button>
@@ -244,13 +286,13 @@
                 <button class="btn-primary" onclick="saveInitialWeight()">Set Baseline & Continue</button>
             </div>
 
-            <!-- History View -->
+            <!-- History View (Full List) -->
             <div id="history-view" style="display:none;">
                 <div class="add-weight-form">
                     <input type="number" id="new-weight-input" placeholder="Current fasting weight (KG)">
                     <button class="btn-primary" onclick="addNewWeight()">Add</button>
                 </div>
-                <div id="weight-list"></div>
+                <div id="weight-list-modal" style="max-height: 300px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
@@ -265,7 +307,7 @@
             { name: 'Bench Press', current: 180, target: 230, completed: false },
             { name: 'Squat', current: 220, target: 270, completed: false },
             { name: 'Deadlift', current: 260, target: 315, completed: false },
-            { name: 'Pull Up', current: 0, target: 20, completed: false }
+            { name: 'Pull Ups', current: 0, target: 20, completed: false } // 4th Goal (Index 3)
         ];
 
         function loadGoals() {
@@ -277,20 +319,26 @@
             goals.forEach((g, i) => {
                 const row = document.createElement('div');
                 row.className = 'goal-row';
+
+                // 4th Goal Logic: Change labels for Index 3
+                const isRepGoal = (i === 3);
+                const labelCurrent = isRepGoal ? 'Current' : 'Current (KG)';
+                const labelTarget = isRepGoal ? 'Target' : 'Target (KG)';
+
                 row.innerHTML = `
                     <div class="goal-wrap">
                         <span class="goal-label">Exercise</span>
                         <input class="goal-input name" value="${g.name}" data-idx="${i}" data-field="name" onchange="saveGoalField(this)">
                     </div>
                     <div class="goal-wrap">
-                        <span class="goal-label">Current (KG)</span>
-                        <input type="number" class="goal-input" value="${g.current}" data-idx="${i}" data-field="current" onchange="saveGoalField(this)">
+                        <span class="goal-label">${labelCurrent}</span>
+                        <input type="number" class="goal-input val" value="${g.current}" data-idx="${i}" data-field="current" onchange="saveGoalField(this)">
                     </div>
                     <div class="goal-wrap">
-                        <span class="goal-label">Target (KG)</span>
-                        <input type="number" class="goal-input" value="${g.target}" data-idx="${i}" data-field="target" onchange="saveGoalField(this)">
+                        <span class="goal-label">${labelTarget}</span>
+                        <input type="number" class="goal-input val" value="${g.target}" data-idx="${i}" data-field="target" onchange="saveGoalField(this)">
                     </div>
-                    <input type="checkbox" class="goal-checkbox" ${g.completed ? 'checked' : ''} data-idx="${i}" onchange="saveGoalField(this)">
+                    <input type="checkbox" class="goal-checkbox" ${g.completed ? 'checked' : ''} data-idx="${i}" onchange="saveGoalField(this)" title="Mark Complete">
                 `;
                 container.appendChild(row);
             });
@@ -325,9 +373,8 @@
             } else {
                 setupView.style.display = 'none';
                 historyView.style.display = 'block';
-                modalTitle.textContent = '📈 Weight Tracker';
-                renderWeightHistory(history);
-                updateWeightPreview(history);
+                modalTitle.textContent = '📈 Weight Tracker (Manage)';
+                renderWeightListModal(history);
             }
         }
 
@@ -355,12 +402,13 @@
             history.unshift({ kg, date: new Date().toISOString() }); // Add to top
             localStorage.setItem('gymWeightHistory', JSON.stringify(history));
             document.getElementById('new-weight-input').value = '';
-            renderWeightHistory(history);
-            updateWeightPreview(history);
+            
+            renderWeightListModal(history);
+            updateDashboardWidget(history);
         }
 
-        function renderWeightHistory(history) {
-            const list = document.getElementById('weight-list');
+        function renderWeightListModal(history) {
+            const list = document.getElementById('weight-list-modal');
             list.innerHTML = '';
             
             history.forEach((entry, i) => {
@@ -386,25 +434,48 @@
             if (newKg && !isNaN(newKg) && newKg > 0) {
                 history[index].kg = parseFloat(newKg);
                 localStorage.setItem('gymWeightHistory', JSON.stringify(history));
-                renderWeightHistory(history);
-                updateWeightPreview(history);
+                renderWeightListModal(history);
+                updateDashboardWidget(history);
             }
         }
 
-        function updateWeightPreview(history) {
-            const latest = history[0];
-            if (latest) {
-                const kgStr = `${latest.kg} KG`;
-                document.getElementById('stat-bw').textContent = kgStr;
-                document.getElementById('weight-preview').textContent = `Last: ${kgStr} on ${new Date(latest.date).toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
+        // Render Widget on Dashboard Card (Scrollable)
+        function updateDashboardWidget(history) {
+            const widget = document.getElementById('weight-list-widget');
+            const statBW = document.getElementById('stat-bw');
+            
+            // Update Top Stat
+            if (history.length > 0) {
+                statBW.textContent = `${history[0].kg} KG`;
+            } else {
+                statBW.textContent = '-- KG';
             }
+
+            if (history.length === 0) {
+                widget.innerHTML = '<div style="text-align:center; color:var(--text-secondary); padding:20px;">Click "Manage / Edit" to set your first weight.</div>';
+                return;
+            }
+
+            widget.innerHTML = '';
+            history.forEach(entry => {
+                const dateObj = new Date(entry.date);
+                const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                
+                const row = document.createElement('div');
+                row.className = 'weight-mini-row';
+                row.innerHTML = `
+                    <span>${dateStr}</span>
+                    <span>${entry.kg} KG</span>
+                `;
+                widget.appendChild(row);
+            });
         }
 
         // Initialize on load
         window.addEventListener('DOMContentLoaded', () => {
             loadGoals();
             const history = JSON.parse(localStorage.getItem('gymWeightHistory')) || [];
-            updateWeightPreview(history);
+            updateDashboardWidget(history);
         });
 
         // Close modal on outside click
