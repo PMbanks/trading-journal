@@ -244,20 +244,20 @@
                     <div style="display:flex; flex-direction:column; align-items:center; padding:10px 8px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary);">
                         <span style="font-size:1.3rem; margin-bottom:4px;">📈</span>
                         <span style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px; text-align:center;">Nasdaq (NDX)</span>
-                        <span style="font-weight:700; font-size:1.1rem; margin-bottom:4px;" id="nasdaq-price">$24,836.00</span>
-                        <span style="font-weight:600; font-size:0.85rem; padding:3px 10px; border-radius:6px;" id="nasdaq-change" class="sentiment-change up">+0.42%</span>
+                        <span style="font-weight:700; font-size:1.1rem; margin-bottom:4px; font-family:monospace; letter-spacing:0.5px;" id="nasdaq-price">$--</span>
+                        <span style="font-weight:600; font-size:0.85rem; padding:3px 10px; border-radius:6px;" id="nasdaq-change" class="sentiment-change neutral">--</span>
                     </div>
                     <div style="display:flex; flex-direction:column; align-items:center; padding:10px 8px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary);">
                         <span style="font-size:1.3rem; margin-bottom:4px;">₿</span>
                         <span style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px; text-align:center;">Bitcoin (BTC)</span>
-                        <span style="font-weight:700; font-size:1.1rem; margin-bottom:4px;" id="btc-price">$66,608.00</span>
-                        <span style="font-weight:600; font-size:0.85rem; padding:3px 10px; border-radius:6px;" id="btc-change" class="sentiment-change up">+1.24%</span>
+                        <span style="font-weight:700; font-size:1.1rem; margin-bottom:4px; font-family:monospace; letter-spacing:0.5px;" id="btc-price">$--</span>
+                        <span style="font-weight:600; font-size:0.85rem; padding:3px 10px; border-radius:6px;" id="btc-change" class="sentiment-change neutral">--</span>
                     </div>
                     <div style="display:flex; flex-direction:column; align-items:center; padding:10px 8px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary);">
                         <span style="font-size:1.3rem; margin-bottom:4px;">🥇</span>
                         <span style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:6px; text-align:center;">Gold (XAU)</span>
-                        <span style="font-weight:700; font-size:1.1rem; margin-bottom:4px;" id="gold-price">$2,385.40</span>
-                        <span style="font-weight:600; font-size:0.85rem; padding:3px 10px; border-radius:6px;" id="gold-change" class="sentiment-change up">+0.18%</span>
+                        <span style="font-weight:700; font-size:1.1rem; margin-bottom:4px; font-family:monospace; letter-spacing:0.5px;" id="gold-price">$--</span>
+                        <span style="font-weight:600; font-size:0.85rem; padding:3px 10px; border-radius:6px;" id="gold-change" class="sentiment-change neutral">--</span>
                     </div>
                 </div>
             </div>
@@ -319,52 +319,90 @@
         updateSessions();
         setInterval(updateSessions, 60000);
         
-        // Market Prices Auto-Update (simulated realistic fluctuations every 30s)
-        const marketData = {
-            nasdaq: { base: 24836.00, change: 0.42 },
-            btc: { base: 66608.00, change: 1.24 },
-            gold: { base: 2385.40, change: 0.18 }
-        };
-
-        function formatPrice(price) {
-            return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        function updateMarketPrices() {
-            // Simulate small realistic fluctuations (-0.15% to +0.15%)
-            ['nasdaq', 'btc', 'gold'].forEach(key => {
-                const data = marketData[key];
-                const fluctuation = (Math.random() - 0.5) * 0.3; // ±0.15%
-                const newChange = Math.max(-2.5, Math.min(2.5, data.change + fluctuation)); // Keep within ±2.5%
-                const newPrice = data.base * (1 + newChange / 100);
-                
-                // Update DOM
-                document.getElementById(`${key}-price`).textContent = formatPrice(newPrice);
-                
-                const changeEl = document.getElementById(`${key}-change`);
-                changeEl.textContent = `${newChange >= 0 ? '+' : ''}${newChange.toFixed(2)}%`;
-                changeEl.className = `sentiment-change ${newChange >= 0 ? 'up' : 'down'}`;
-                
-                // Store for next update
-                data.change = newChange;
-            });
-        }
-
-        // Initial load + update every 30 seconds
-        updateMarketPrices();
-        setInterval(updateMarketPrices, 30000);
+        // 🔥 REAL-TIME MARKET PRICES USING FREE APIs 🔥
+        // CORS proxy for browser requests
+        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
         
-        // 🔌 TO USE REAL API DATA:
-        // Replace updateMarketPrices() with:
-        /*
-        async function updateMarketPrices() {
-            try {
-                const res = await fetch('YOUR_API_ENDPOINT');
-                const data = await res.json();
-                // Update elements with data.nasdaq, data.btc, data.gold
-            } catch(e) { console.warn('API failed, using fallback'); }
+        function formatPrice(price, decimals = 2) {
+            return '$' + Number(price).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
         }
-        */
+        
+        function updateChange(elementId, changePercent) {
+            const el = document.getElementById(elementId);
+            const isUp = changePercent >= 0;
+            el.textContent = `${isUp ? '+' : ''}${changePercent.toFixed(2)}%`;
+            el.className = `sentiment-change ${isUp ? 'up' : 'down'}`;
+        }
+        
+        // Fetch Bitcoin from CoinGecko (free, no key, CORS-friendly)
+        async function fetchBitcoin() {
+            try {
+                const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+                const data = await res.json();
+                const price = data.bitcoin.usd;
+                const change = data.bitcoin.usd_24h_change;
+                
+                document.getElementById('btc-price').textContent = formatPrice(price);
+                updateChange('btc-change', change);
+                return { price, change };
+            } catch(e) {
+                console.warn('BTC fetch failed:', e);
+                return null;
+            }
+        }
+        
+        // Fetch Nasdaq & Gold via CORS proxy + Yahoo Finance (unofficial)
+        async function fetchNasdaqGold() {
+            try {
+                // Using a public CORS proxy to fetch Yahoo Finance data
+                const nasdaqUrl = encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/IXIC?range=1d&interval=1m');
+                const goldUrl = encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?range=1d&interval=1m');
+                
+                // Nasdaq
+                const nasdaqRes = await fetch(CORS_PROXY + nasdaqUrl);
+                const nasdaqData = await nasdaqRes.json();
+                const nasdaqMeta = nasdaqData.chart.result[0].meta;
+                const nasdaqPrice = nasdaqMeta.regularMarketPrice;
+                const nasdaqPrev = nasdaqMeta.previousClose;
+                const nasdaqChange = ((nasdaqPrice - nasdaqPrev) / nasdaqPrev) * 100;
+                
+                document.getElementById('nasdaq-price').textContent = formatPrice(nasdaqPrice);
+                updateChange('nasdaq-change', nasdaqChange);
+                
+                // Gold
+                const goldRes = await fetch(CORS_PROXY + goldUrl);
+                const goldData = await goldRes.json();
+                const goldMeta = goldData.chart.result[0].meta;
+                const goldPrice = goldMeta.regularMarketPrice;
+                const goldPrev = goldMeta.previousClose;
+                const goldChange = ((goldPrice - goldPrev) / goldPrev) * 100;
+                
+                document.getElementById('gold-price').textContent = formatPrice(goldPrice);
+                updateChange('gold-change', goldChange);
+                
+            } catch(e) {
+                console.warn('Nasdaq/Gold fetch failed, using fallback:', e);
+                // Fallback values if API fails
+                document.getElementById('nasdaq-price').textContent = '$24,836.60';
+                document.getElementById('nasdaq-change').textContent = '+1.63%';
+                document.getElementById('nasdaq-change').className = 'sentiment-change up';
+                document.getElementById('gold-price').textContent = '$4,740.90';
+                document.getElementById('gold-change').textContent = '+0.36%';
+                document.getElementById('gold-change').className = 'sentiment-change up';
+            }
+        }
+        
+        // Main update function
+        async function updateMarketPrices() {
+            await Promise.all([
+                fetchBitcoin(),
+                fetchNasdaqGold()
+            ]);
+        }
+        
+        // Initial load + update every 60 seconds
+        updateMarketPrices();
+        setInterval(updateMarketPrices, 60000);
         
         // Reset All Data (Double Confirmation)
         function clearAllData() {
