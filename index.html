@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trading Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent: #58a6ff;
+      --success: #2ea043;
+      --danger: #da3633;
+      --warning: #d29922;
+      --radius: 12px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text-primary);
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    /* Header */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .dashboard-header h1 { font-size: 1.5rem; font-weight: 700; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: #21262d; }
+    .instagram-link { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+
+    /* Main Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .card-icon { font-size: 1.5rem; margin-bottom: 4px; }
+    .card h2 { font-size: 1.1rem; font-weight: 600; }
+    .card p { font-size: 0.85rem; color: var(--text-secondary); }
+    .arrow { margin-top: auto; text-align: right; color: var(--text-secondary); font-size: 1.2rem; }
+
+    /* Side-by-Side Row */
+    .top-row-split {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .split-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      flex: 1;
+      min-width: 280px;
+    }
+    .live-sessions { flex: 1.3; }
+    .market-sentiment { flex: 0.9; max-width: 380px; }
+
+    .card-header { font-size: 1rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+    /* Live Sessions */
+    .sessions-list { display: flex; flex-direction: column; gap: 10px; }
+    .session { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+    .session span { color: var(--text-secondary); font-size: 0.8rem; }
+    .status.closed { color: var(--danger); font-weight: 600; }
+    .est-time { margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); text-align: right; }
+
+    /* Market Sentiment (Compact) */
+    .sentiment-content { display: flex; flex-direction: column; gap: 10px; }
+    .index-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .index-item:last-child { border-bottom: none; }
+    .symbol { font-size: 0.85rem; color: var(--text-secondary); }
+    .price { font-size: 0.95rem; font-weight: 600; margin-left: auto; padding: 0 12px; }
+    .change { font-size: 0.8rem; font-weight: 600; min-width: 50px; text-align: right; }
+    .change.positive { color: var(--success); }
+    .change.negative { color: var(--danger); }
+    .change.neutral { color: var(--text-secondary); }
+
+    /* Footer */
+    .dashboard-footer {
+      text-align: center;
+      margin-top: 32px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+    .dashboard-footer a { color: var(--accent); text-decoration: none; }
+    .footer-links { margin-top: 12px; display: flex; justify-content: center; gap: 16px; }
+    .footer-links a, .footer-links span { font-size: 0.9rem; }
+
+    /* Theme Modal (Preserved) */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
+    .modal.active { display: flex; }
+    .modal-content { background: var(--card-bg); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); width: 90%; max-width: 300px; text-align: center; position: relative; }
+    .close { position: absolute; top: 10px; right: 14px; cursor: pointer; font-size: 1.2rem; }
+    .theme-options { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .theme-btn { padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: #21262d; color: var(--text-primary); cursor: pointer; }
+
+    @media (max-width: 768px) {
+      .top-row-split { flex-direction: column; }
+      .market-sentiment { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="dashboard-header">
+    <h1>📊 Trading Dashboard</h1>
+    <div class="header-actions">
+      <button class="btn" id="themeBtn">🎨 Themes</button>
+      <button class="btn" id="resetBtn">🗑️ Reset Data</button>
+      <a href="https://www.instagram.com/eddwinnq/" target="_blank" class="instagram-link">@eddwinnq</a>
+    </div>
+  </header>
+
+  <main class="dashboard-grid">
+    <a href="calendar.html" class="card">
+      <div class="card-icon">📅</div>
+      <h2>Calendar</h2>
+      <p>Performance charts, market sentiment & rule violations</p>
+      <div class="arrow">→</div>
+    </a>
+
+    <a href="journal.html" class="card">
+      <div class="card-icon">📈</div>
+      <h2>Create a Trade</h2>
+      <p>Log trades, rate execution & track progress</p>
+      <div class="arrow">→</div>
+    </a>
+
+    <a href="propfirms.html" class="card">
+      <div class="card-icon">💼</div>
+      <h2>Propfirms</h2>
+      <p>Manage accounts, balances & drawdowns</p>
+      <div class="arrow">→</div>
+    </a>
+
+    <a href="rules.html" class="card">
+      <div class="card-icon">⚙️</div>
+      <h2>Trading Rules</h2>
+      <p>Configure limits & get discipline alerts</p>
+      <div class="arrow">→</div>
+    </a>
+  </main>
+
+  <div class="top-row-split">
+    <!-- Live Sessions -->
+    <section class="split-card live-sessions">
+      <div class="card-header">🌍 Live Sessions</div>
+      <div class="sessions-list">
+        <div class="session">Asia <span>18:00-02:00</span> <span class="status closed">Closed</span></div>
+        <div class="session">London <span>03:00-12:00</span> <span class="status closed">Closed</span></div>
+        <div class="session">New York <span>08:00-17:00</span> <span class="status closed">Closed</span></div>
+      </div>
+      <div class="est-time">--:-- EST</div>
+    </section>
+
+    <!-- Market Sentiment (Updated: Nasdaq + Daily %) -->
+    <section class="split-card market-sentiment">
+      <div class="card-header">📊 Market Sentiment</div>
+      <div class="sentiment-content">
+        <div class="index-item">
+          <span class="symbol">📈 Nasdaq (NDX)</span>
+          <span class="price" id="nasdaq-price">$--</span>
+          <span class="change" id="nasdaq-change">+0.00%</span>
+        </div>
+        <div class="index-item">
+          <span class="symbol">₿ Bitcoin (BTC)</span>
+          <span class="price">$69,850</span>
+          <span class="change positive">+2.85%</span>
+        </div>
+        <div class="index-item">
+          <span class="symbol">🥇 Gold (XAU)</span>
+          <span class="price">$2,385.40</span>
+          <span class="change positive">+0.65%</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="dashboard-footer">
+    <p>Created by <a href="#">PMbanks</a> • Built for disciplined traders</p>
+    <div class="footer-links">
+      <a href="#">[🛒 Shop]</a> <span>[SOON]</span>
+      <a href="#">[🚫 Don't Enter]</a>
+    </div>
+  </footer>
+
+  <!-- Theme Modal -->
+  <div class="modal" id="themeModal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h3>Select Theme</h3>
+      <div class="theme-options">
+        <button class="theme-btn" data-theme="dark">🌙 Dark (Default)</button>
+        <button class="theme-btn" data-theme="light">☀️ Light</button>
+        <button class="theme-btn" data-theme="midnight">🌌 Midnight Blue</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme Modal Logic
+    const themeBtn = document.getElementById('themeBtn');
+    const themeModal = document.getElementById('themeModal');
+    const closeModal = document.getElementById('closeModal');
+    
+    themeBtn.addEventListener('click', () => themeModal.classList.add('active'));
+    closeModal.addEventListener('click', () => themeModal.classList.remove('active'));
+    window.addEventListener('click', (e) => { if (e.target === themeModal) themeModal.classList.remove('active'); });
+
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.body.style.setProperty('--bg', btn.dataset.theme === 'light' ? '#ffffff' : '#0f1115');
+        document.body.style.setProperty('--card-bg', btn.dataset.theme === 'light' ? '#f6f8fa' : '#161b22');
+        document.body.style.setProperty('--text-primary', btn.dataset.theme === 'light' ? '#1f2328' : '#e6edf3');
+        document.body.style.setProperty('--border', btn.dataset.theme === 'light' ? '#d0d7de' : '#30363d');
+        themeModal.classList.remove('active');
+      });
+    });
+
+    // Nasdaq Live Price & Daily % Change Logic
+    async function updateMarketSentiment() {
+      try {
+        // 🔌 REPLACE WITH YOUR REAL API CALL:
+        // const res = await fetch('YOUR_NASDAQ_DATA_ENDPOINT');
+        // const data = await res.json();
+        // const currentPrice = data.price;
+        // const dayOpen = data.dayOpen; // Used for same-day % change
+
+        // Mock data for immediate testing
+        const currentPrice = 18432.50;
+        const dayOpen = 18380.20;
+
+        const change = currentPrice - dayOpen;
+        const changePercent = ((change / dayOpen) * 100).toFixed(2);
+        const isPositive = changePercent >= 0;
+
+        document.getElementById('nasdaq-price').textContent = `$${currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        
+        const changeEl = document.getElementById('nasdaq-change');
+        changeEl.textContent = `${isPositive ? '+' : ''}${changePercent}%`;
+        changeEl.className = `change ${isPositive ? 'positive' : 'negative'}`;
+      } catch (err) {
+        console.warn('Market sentiment fetch failed:', err);
+        document.getElementById('nasdaq-price').textContent = 'Error';
+        document.getElementById('nasdaq-change').textContent = '--';
+      }
+    }
+
+    // Initial load + refresh every 30 seconds
+    updateMarketSentiment();
+    setInterval(updateMarketSentiment, 30000);
+  </script>
+</body>
+</html>
