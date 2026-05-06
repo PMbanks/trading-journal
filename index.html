@@ -54,7 +54,17 @@ z-index:2000;
 font-size:28px;
 margin-bottom:10px;
 }
+.small-btn{
+width:260px;
+padding:8px;
+font-size:13px;
+opacity:0.8;
+}
 
+.small-btn:hover{
+opacity:1;
+transform:scale(1.03);
+}
 #authScreen input{
 width:250px;
 padding:12px;
@@ -697,10 +707,12 @@ transform:translateY(0);
 
     <button onclick="register()">Register</button>
     <button onclick="loginEmail()">Login</button>
-    <button onclick="resetPassword()">Forgot Password</button>
-    <button onclick="resendVerification()">Resend Verification</button>
+    <div style="font-size:12px;opacity:0.5;">or</div>
+  <button class="small-btn" onclick="resetPassword()">Forgot Password</button>
+<button class="small-btn" onclick="resendVerification()">Resend Verification</button>
     <div style="font-size:12px;opacity:0.7;margin-top:5px;">
-You must verify your email before playing
+You must verify your email to enter the best website about tracking your life. 
+    </div>
 </div>
 </div>
 <div id="leaderboard">
@@ -848,7 +860,7 @@ function register(){
     const password = document.getElementById("password").value.trim();
 
     if(!email || !password){
-        toast("Enter email and password");
+        toast("⚠️ Enter email and password");
         return;
     }
 
@@ -856,12 +868,11 @@ function register(){
     .then(result=>{
         const user = result.user;
 
-        // 🔥 send verification email
         user.sendEmailVerification().then(()=>{
-            toast("📧 Verification email sent!");
+            toast("📧 Check your email to verify");
         });
 
-        auth.signOut(); // force re-login after verification
+        auth.signOut(); // 🔥 IMPORTANT
     })
     .catch(err=>{
         toast(err.message);
@@ -896,14 +907,16 @@ function resendVerification(){
         return;
     }
 
-    if(user.emailVerified){
-        toast("Already verified");
-        return;
-    }
+    user.reload().then(()=>{
+        if(user.emailVerified){
+            toast("Already verified");
+            return;
+        }
 
-    user.sendEmailVerification()
-    .then(()=>toast("📧 Email sent again"))
-    .catch(err=>toast(err.message));
+        user.sendEmailVerification()
+        .then(()=>toast("📧 Email sent"))
+        .catch(err=>toast(err.message));
+    });
 }
 function loginEmail(){
     const email = document.getElementById("email").value.trim();
@@ -914,12 +927,12 @@ function loginEmail(){
         const user = result.user;
 
         if(!user.emailVerified){
-            toast("📧 Please verify your email first");
+            toast("📧 Verify your email first");
             auth.signOut();
             return;
         }
 
-        toast("Logged in!");
+        toast("Welcome back!");
     })
     .catch(err=>toast(err.message));
 }
@@ -944,36 +957,19 @@ auth.onAuthStateChanged(user=>{
         return;
     }
 
+    // 🚨 BLOCK UNVERIFIED USERS
     if(!user.emailVerified){
         document.getElementById("authScreen").style.display = "flex";
-        toast("📧 Verify your email before logging in");
-        auth.signOut();
+        toast("📧 Verify your email first");
+
+        auth.signOut(); // 🔥 force them out
         return;
     }
 
+    // ✅ ONLY VERIFIED USERS ENTER
     document.getElementById("authScreen").style.display = "none";
     document.getElementById("username").innerText = user.email + " ✅";
-    document.getElementById("loginBtn").innerText = "👤";
 });
-    const scoresDiv = document.getElementById("scores");
-function updateLeaderboard(score){
-    const username = auth.currentUser?.email;
-    if(!username) return;
-    const photo = localStorage.getItem("photo") || null;
-    const avatar = localStorage.getItem("avatar") || null;
-
-    const data = {
-        name: username,
-        score: score,
-        photo: photo,
-        avatar: avatar,
-        time: Date.now()
-    };
-
-    saveToBoard("leaderboard_all", data);
-    saveToBoard("leaderboard_daily", data);
-    saveToBoard("leaderboard_weekly", data);
-}
 let previousPosition = null;
 let currentBoard = localStorage.getItem("currentBoard") || "leaderboard_all";
 db.collection(currentBoard)
@@ -1127,8 +1123,8 @@ function startGame(){
     },1000);
 }
 function showProfile(){
-   const username = auth.currentUser.email;
-    if(!username) return;
+   const username = auth.currentUser?.email;
+if(!username) return;
 
     db.collection("profiles").doc(username).get().then(doc=>{
         if(!doc.exists){
