@@ -1188,6 +1188,9 @@ if(!/[a-zA-Z]/.test(username)){
     });
 }
 function applyUsername(name){
+
+    localStorage.setItem("username", name);
+
     document.getElementById("username").innerText = name;
 }
 function logout(){
@@ -1404,6 +1407,8 @@ function startGame(){
     score = 0;
     timeLeft = 30;
     gameActive = true;
+    hits = 0;
+totalClicks = 0;
 
     document.getElementById("gameScore").innerText = "🎯 0";
     document.getElementById("gameTimer").innerText = "⏱ 30";
@@ -1452,14 +1457,17 @@ function endGame(){
     gameActive = false;
 
     showFinalScore(score);
-
+const accuracy =
+totalClicks > 0
+? Math.floor((hits / totalClicks) * 100)
+: 0;
     if(score > maxScore){
 
         maxScore = score;
 
         localStorage.setItem("maxScore", maxScore);
 
-        updateLeaderboard(score);
+       updateLeaderboard(score, accuracy);
 
         showHighScore();
     }
@@ -1488,20 +1496,23 @@ function endGame(){
 
 }
 function updateLeaderboard(score, accuracy){
-    const username = localStorage.getItem("username") || "Anonymous";
+   const username =
+document.getElementById("username").innerText || "Anonymous";
     const photo = localStorage.getItem("photo") || null;
 
-    const userRef = db.collection("leaderboard").doc(username);
+    const userRef =
+db.collection("leaderboard_all")
+.doc(auth.currentUser.uid);
 
     userRef.get().then(doc=>{
         if(!doc.exists || score > doc.data().score){
             userRef.set({
                 name: username,
-                score: score,
-                accuracy: accuracy,
-                photo: photo,
-                avatar: localStorage.getItem("avatar") || null,
-                time: Date.now()
+score: score,
+accuracy: accuracy,
+photo: auth.currentUser.photoURL || "",
+avatar: localStorage.getItem("avatar") || null,
+time: Date.now()
             });
         }
     });
@@ -1699,6 +1710,8 @@ let timeLeft = 30;
 let timer;
 let score = 0;
 let maxScore = parseInt(localStorage.getItem("maxScore")) || 0; 
+let hits = 0;
+let totalClicks = 0;
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -1762,6 +1775,7 @@ canvas.addEventListener("click", (e) => {
         startGame();
         return;
     }
+    totalClicks++;
 
     const rect = canvas.getBoundingClientRect();
     let mouseX = e.clientX - rect.left;
@@ -1785,7 +1799,8 @@ canvas.addEventListener("click", (e) => {
             break;
         }
     }
-if(hit){    
+if(hit){   
+    hits++; 
     score++;
     document.getElementById("gameScore").innerText = "🎯 " + score;
     toast("🔥 HIT +1!");
