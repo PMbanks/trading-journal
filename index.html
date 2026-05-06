@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard</title>
@@ -720,57 +719,17 @@ transform:translateY(0);
 </head>
 
 <div id="authScreen">
+<div id="loginBox" class="authPopup show">
+    <h2>Welcome</h2>
 
-    <!-- LOGIN SCREEN -->
-    <div id="loginBox" class="authPopup show">
-        <h2>Login / Register</h2>
-
-        <input id="email" placeholder="Email" class="input">
-        <input id="password" type="password" placeholder="Password" class="input">
-
-        <label style="font-size:13px;">
-            <input type="checkbox" id="rememberMe"> Remember me
-        </label>
-
-        <button onclick="register()">Register</button>
-        <button onclick="loginEmail()">Login</button>
-
-        <button onclick="loginGoogle()">Continue with Google</button>
-
+    <button onclick="loginGoogle()">Continue with Google</button>
+</div>
         <div style="font-size:12px;opacity:0.5;">or</div>
-
-        <button class="small-btn" onclick="resetPassword()">Forgot Password</button>
-        <button class="small-btn" onclick="resendVerification()">Resend Verification</button>
-    </div>
-
-
-    <!-- EMAIL SENT -->
-    <div id="emailSentScreen" class="authPopup" style="display:none;">
-        <h2>Email Confirmation</h2>
-        <p id="emailText"></p>
-
-        <input id="code" placeholder="Enter code" class="input">
-        <button id="verifyBtn" onclick="verifyCode()">Verify</button>
-
-        <p id="timerText" style="opacity:0.7;"></p>
-
-        <button onclick="resendCode()">Resend Email</button>
-    </div>
-
-
     <!-- USERNAME SETUP -->
     <div id="usernameSetup" class="authPopup" style="display:none;">
         <h2>Create Username</h2>
         <input id="newUsername" placeholder="Enter username" class="input">
         <button onclick="saveUsername()">Continue</button>
-    </div>
-
-
-    <!-- SUCCESS -->
-    <div id="emailSuccessScreen" class="authPopup" style="display:none;">
-        <h2>Success</h2>
-        <p>Your email has been confirmed.</p>
-        <button onclick="closeSuccess()">Continue</button>
     </div>
 </div>
 <div id="leaderboard">
@@ -913,80 +872,16 @@ Welcome back, <span id="username"></span>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script> 
-emailjs.init("2siSmssjSJvZ5YX3E");
-let tempCode = null;
-let tempEmail = null;
-let tempPassword = null;
-let codeExpires = 0;
-let countdownInterval = null;
-let resendCooldown = 0;
-
-function register(){
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if(!email || !password){
-        toast("Enter email and password");
-        return;
-    }
-
-    // 🔥 generate 6-digit code
-    tempCode = Math.floor(100000 + Math.random() * 900000);
-    tempEmail = email;
-    tempPassword = password;
-    codeExpires = Date.now() + (2 * 60 * 1000); // ⏱ 2 minutes
-    // 🚨 SEND EMAIL WITH EMAILJS
- emailjs.send("service_fuz06ef", "template_hmyr9nc", {
-    email: email,
-    code: tempCode
-})
-    .then(() => {
-    showEmailSentScreen(email);
-        startCountdown();
-
-        document.getElementById("code").style.display = "block";
-        document.getElementById("verifyBtn").style.display = "block";
-    })
-    .catch(err => {
-        console.error(err);
-        toast("❌ Failed to send email");
-    });
-}
-function resendCode(){
-    const btn = document.querySelector("#emailSentScreen button");
-
-    if(Date.now() < resendCooldown){
-        toast("⏳ Wait before resending");
-        return;
-    }
-
-    resendCooldown = Date.now() + 30000; // 30 sec cooldown
-
-    tempCode = Math.floor(100000 + Math.random() * 900000);
-    codeExpires = Date.now() + (2 * 60 * 1000);
-
-emailjs.send("service_fuz06ef","template_hmyr9nc",{
-    code: tempCode,
-    email: tempEmail
-});
-
-    startCountdown();
-
-    btn.innerText = "Resent!";
-    setTimeout(()=>btn.innerText = "Resend Email", 2000);
-}
 function loginGoogle(){
     const provider = new firebase.auth.GoogleAuthProvider();
 
     auth.signInWithPopup(provider)
     .then(result=>{
         const user = result.user;
-
-        toast("Logged in with Google!");
-
-        checkUsername(user); // 🔥 important
+ document.getElementById("authScreen").style.display = "none";
+        checkUsername(user); // keeps your username system
     })
-    .catch(err=>toast(err.message));
+    .catch(err=>console.error(err));
 }
 function checkUsername(user){
     const ref = db.collection("users").doc(user.uid);
@@ -1010,186 +905,57 @@ function showUsernameSetup(){
 function saveUsername(){
     const username = document.getElementById("newUsername").value.trim();
     const user = auth.currentUser;
+    
 
     if(!username){
         toast("Enter username");
         return;
     }
 
-    db.collection("users").doc(user.uid).set({
-        username: username
-    }).then(()=>{
-        applyUsername(username);
+    if(username.length < 3){
+        toast("Username too short");
+        return;
+    }
 
-        document.getElementById("usernameSetup").style.display = "none";
-        document.getElementById("authScreen").style.display = "none";
+    // 🔥 CHECK DUPLICATE
+    db.collection("users")
+    .where("username", "==", username)
+    .get()
+    .then(snapshot => {
 
-        toast("Username saved!");
+        if(!snapshot.empty){
+            toast("Username already taken ❌");
+            return;
+        }
+
+        // ✅ SAFE TO SAVE
+        db.collection("users").doc(user.uid).set({
+            username: username,
+            photo: user.photoURL || ""
+        }).then(()=>{
+
+            applyUsername(username);
+
+            document.getElementById("usernameSetup").style.display = "none";
+            document.getElementById("authScreen").style.display = "none";
+
+            toast("Username created ✅");
+            if(!/^[a-zA-Z0-9_]+$/.test(username)){
+    toast("Only letters, numbers, _");
+    return;
+}const username = document.getElementById("newUsername")
+.value.trim().toLowerCase();
+        });
+
     });
 }
 function applyUsername(name){
     document.getElementById("username").innerText = name;
 }
-function showEmailSentScreen(email){
-    document.getElementById("loginBox").style.display = "none";
-
-    const box = document.getElementById("emailSentScreen");
-
-    document.getElementById("emailText").innerText =
-        "We sent an email to " + email;
-
-    box.style.display = "block";
-
-    setTimeout(()=>box.classList.add("show"),10);
-}
-function startCountdown(){
-    clearInterval(countdownInterval);
-
-    countdownInterval = setInterval(()=>{
-        let remaining = Math.max(0, codeExpires - Date.now());
-
-        let seconds = Math.floor(remaining / 1000);
-        let mins = Math.floor(seconds / 60);
-        seconds = seconds % 60;
-
-        document.getElementById("timerText").innerText =
-            `Code expires in ${mins}:${seconds.toString().padStart(2,"0")}`;
-
-        if(remaining <= 0){
-            clearInterval(countdownInterval);
-            document.getElementById("timerText").innerText = "⏰ Code expired";
-        }
-
-    }, 1000);
-}
-function showSuccessScreen(){
-    const sent = document.getElementById("emailSentScreen");
-    const success = document.getElementById("emailSuccessScreen");
-
-    sent.classList.remove("show");
-
-    setTimeout(()=>{
-        sent.style.display = "none";
-
-        success.style.display = "block";
-
-        setTimeout(()=>success.classList.add("show"),10);
-
-    },200);
-}
-function closeSuccess(){
-    const success = document.getElementById("emailSuccessScreen");
-
-    success.classList.remove("show");
-
-    setTimeout(()=>{
-        success.style.display = "none";
-
-        // 🔥 FULLY HIDE AUTH AFTER SUCCESS
-        document.getElementById("authScreen").style.display = "none";
-
-    },200);
-}
-function verifyCode(){
-    const inputCode = document.getElementById("code").value;
-
-    // ⏱ check expiration
-    if(Date.now() > codeExpires){
-        toast("⏰ Code expired");
-        return;
-    }
-
-    // ❌ wrong code
-    if(parseInt(inputCode) !== tempCode){
-        toast("❌ Wrong code");
-        return;
-    }
-
-    // ✅ create account
-auth.createUserWithEmailAndPassword(tempEmail, tempPassword)
-.then((result)=>{
-    toast("✅ Account created!");
-
-    // 🔥 AUTO LOGIN (this is the key)
-    auth.signInWithEmailAndPassword(tempEmail, tempPassword)
-    .then(()=>{
-        showSuccessScreen();
-    });
-
-    tempCode = null;
-
-    document.getElementById("code").style.display = "none";
-    document.getElementById("verifyBtn").style.display = "none";
-})
-.catch(err=>toast(err.message));
-}
 function logout(){
     auth.signOut().then(()=>{
         toast("Logged out");
     });
-}
-function resetPassword(){
-    const email = document.getElementById("email").value.trim();
-
-    if(!email){
-        toast("Enter your email first");
-        return;
-    }
-
-    auth.sendPasswordResetEmail(email)
-    .then(()=>{
-        toast("📧 Password reset email sent!");
-    })
-    .catch(err=>{
-        toast(err.message);
-    });
-}
-function resendVerification(){
-    const user = auth.currentUser;
-
-    if(!user){
-        toast("Login first");
-        return;
-    }
-
-    user.reload().then(()=>{
-        if(user.emailVerified){
-            toast("Already verified");
-            return;
-        }
-
-        user.sendEmailVerification()
-        .then(()=>toast("📧 Email sent"))
-        .catch(err=>toast(err.message));
-    });
-}
-function loginEmail(){
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const remember = document.getElementById("rememberMe").checked;
-
-    auth.signInWithEmailAndPassword(email, password)
-    .then(result=>{
-        const user = result.user;
-
-        if(!user.emailVerified){
-            toast("📧 Verify your email first");
-            auth.signOut();
-            return;
-        }
-
-        // 🔥 SAVE IF REMEMBER
-        if(remember){
-            localStorage.setItem("savedEmail", email);
-            localStorage.setItem("savedPassword", password);
-        } else {
-            localStorage.removeItem("savedEmail");
-            localStorage.removeItem("savedPassword");
-        }
-
-        toast("Welcome back!");
-    })
-    .catch(err=>toast(err.message));
 }
 const firebaseConfig = {
 apiKey: "AIzaSyA7wlGw9itPf3rLzzCuFzcJyiNFHT5k6F8",   
@@ -1212,24 +978,14 @@ auth.onAuthStateChanged(user=>{
         return;
     }
 
-    // 🔥 ADD THIS LINE
-    console.log("UID:", user.uid);
+    // user is already logged in → skip login screen
+    document.getElementById("authScreen").style.display = "none";
 
     checkUsername(user);
-    // 🚨 BLOCK UNVERIFIED USERS
-    if(!user.emailVerified){
-        document.getElementById("authScreen").style.display = "flex";
-        toast("📧 Verify your email first");
-
-        auth.signOut(); // 🔥 force them out
-        return;
-    }
-
-    // ✅ ONLY VERIFIED USERS ENTER
-    document.getElementById("authScreen").style.display = "none";
 });
 let previousPosition = null;
 let currentBoard = localStorage.getItem("currentBoard") || "leaderboard_all";
+const scoresDiv = document.getElementById("scores");
 db.collection(currentBoard)
 .orderBy("score", "desc")
 .limit(10)
@@ -1242,11 +998,8 @@ db.collection(currentBoard)
 
     setTimeout(() => {
         scoresDiv.innerHTML = "";
-let username = null;
-
-db.collection("users").doc(auth.currentUser.uid).get().then(doc=>{
-    username = doc.data()?.username;
-});
+        
+const username = document.getElementById("username").innerText;
         newData.forEach((data, index) => {
 
             const rank = index + 1;
@@ -1397,13 +1150,13 @@ if(!username) return;
         const d = doc.data();
 
         const box = document.getElementById("profileBox");
-
-        box.innerHTML = `
-        👤 ${username}<br>
-        🎮 Games: ${d.games}<br>
-        🏆 Best: ${d.best}<br>
-        📊 Avg: ${Math.floor(d.totalScore / d.games)}
-        `;
+box.innerHTML = `
+👤 ${auth.currentUser.email}<br>
+📧 ${auth.currentUser.email}<br>
+🎮 Games: ${d.games}<br>
+🏆 Best: ${d.best}<br>
+📊 Avg: ${Math.floor(d.totalScore / d.games)}
+`;
 
         box.classList.add("show");
 
@@ -1463,7 +1216,7 @@ function updateLeaderboard(score){
     if(!user) return;
 
     db.collection("users").doc(user.uid).get().then(doc=>{
-        const username = doc.data().username;
+        const username = doc.exists ? doc.data().username : "User";
 
         const data = {
             name: username,
@@ -1585,16 +1338,17 @@ if(!doc.exists){
 
         const d = doc.data();
         const avg = Math.floor(d.totalScore / d.games);
+const user = auth.currentUser;
 
-        document.getElementById("profileStats").innerHTML = `
-        👤 ${username}<br><br>
-        🏆 Best Ever: ${d.best}<br>
-        📅 Best Week: ${d.bestWeek}<br>
-        📊 Avg Score: ${avg}<br>
-        🎮 Games Played: ${d.games}<br>
-        ⏱ Best Run: ${new Date(d.bestDate).toLocaleDateString()}
-        `;
-
+document.getElementById("profileStats").innerHTML = `
+👤 ${d.username || "User"}<br><br>
+📧 ${user.email}<br><br>
+🏆 Best Ever: ${d.best}<br>
+📅 Best Week: ${d.bestWeek}<br>
+📊 Avg Score: ${avg}<br>
+🎮 Games Played: ${d.games}<br>
+⏱ Best Run: ${new Date(d.bestDate).toLocaleDateString()}
+`;
         document.getElementById("profileScreen").classList.add("show");
     });
 }
@@ -1833,17 +1587,9 @@ document.addEventListener("mouseup", ()=>{
 
     panel.style.transform = null;
 });
-window.addEventListener("load", ()=>{
-    const savedEmail = localStorage.getItem("savedEmail");
-    const savedPassword = localStorage.getItem("savedPassword");
-
-    if(savedEmail){
-        document.getElementById("email").value = savedEmail;
-        document.getElementById("password").value = savedPassword;
-        document.getElementById("rememberMe").checked = true;
-    }
-});
-
+document.getElementById("loginBtn").onclick = () => {
+    document.getElementById("authScreen").style.display = "flex";
+};
 </script>
 </body>
 </html>
