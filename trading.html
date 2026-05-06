@@ -1,57 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
     <title>Trading Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Same styles as index for consistency */
-        .sidebar {
-            position: fixed;
-            left: 0; top: 0; bottom: 0;
-            width: 90px;
-            background: rgba(13, 17, 23, 0.95);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(48, 54, 61, 0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 0;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-        .sidebar-item {
-            display: flex; align-items: center; justify-content: center;
-            width: 50px; height: 50px;
-            border-radius: 14px;
-            font-size: 1.3rem;
-            text-decoration: none;
-            color: #8b949e;
-            margin-bottom: 10px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sidebar-item:hover { background: rgba(33, 38, 45, 0.8); color: #fff; transform: scale(1.1) translateX(2px); }
-        .sidebar-item.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+/* ================= SIDEBAR ================= */
+.sidebar {
+    position: fixed;
+    overflow:visible; 
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 90px;
+
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(48, 54, 61, 0.5);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+
+    z-index: 1000;
+
+    overflow-y: auto;
+    overflow-x: visible; /* REQUIRED for tooltip */
+}
+/* REMOVE SCROLLBAR */
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar {
+    scrollbar-width: none;
+}
+
+/* ================= SIDEBAR ITEMS ================= */
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 60px;
+    height: 60px;
+
+    border-radius: 16px;
+    margin-bottom: 12px;
+
+    color: #8b949e;
+    text-decoration: none;
+
+    transition: all 0.25s ease;
+}
+
+/* ICON */
+.sidebar-item i {
+    width: 26px;
+    height: 26px;
+    stroke-width: 2.4;
+    transition: all 0.25s ease;
+}
+
+/* HOVER */
+.sidebar-item:hover {
+    background: var(--bg-card);
+    color: #fff;
+    transform: translateX(3px);
+}
+
+.sidebar-item:hover i {
+    transform: scale(1.15);
+}
+
+/* ACTIVE */
+.sidebar-item.active {
+    background: var(--bg-card);
+    color: #667eea;
+    box-shadow: inset 0 0 0 1px rgba(102, 126, 234, 0.3);
+}
+
+/* ACTIVE LEFT INDICATOR */
+.sidebar-item.active::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    width: 4px;
+    height: 24px;
+    border-radius: 4px;
+    background: #667eea;
+}
+
+/* ================= TOOLTIP ================= */
+.sidebar .sidebar-item {
+    position: relative;
+}
+/* ULTRA FIXED TOOLTIP */
+.sidebar .sidebar-item::after {
+    content: attr(data-name);
+    position: fixed; /* 🔥 THIS IS THE FIX */
+
+    left: 110px;
+    top: var(--tooltip-top);
+
+    transform: translateY(-50%) translateX(-10px);
+
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    padding: 8px 14px;
+
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+
+    transition: all 0.25s ease;
+    z-index: 999999; /* 🔥 ABOVE EVERYTHING */
+}
+
+/* Position based on element */
+.sidebar .sidebar-item:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
         .sidebar-big { font-size: 1.8rem !important; background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin-bottom: 25px; }
         .sidebar-divider { width: 50%; border-top: 1px solid rgba(48, 54, 61, 0.5); margin: 10px 0; }
         body { padding-left: 110px !important; }
-        
-        :root {
-            --bg-primary: #0a0a0a; --bg-secondary: #111111; --bg-card: #1a1a1a;
-            --text-primary: #ffffff; --text-secondary: #888888; --border-color: #2a2a2a;
-            --accent-blue: #2196f3; --accent-green: #00c853; --accent-purple: #7c4dff;
-            --accent-red: #ff5252; --accent-warn: #ff9800;
-        }
-        .theme-white { --bg-primary:#f0f2f5; --bg-secondary:#ffffff; --bg-card:#ffffff; --text-primary:#1a1a1a; --text-secondary:#6c757d; --border-color:#dee2e6; }
-        .theme-darkblue { --bg-primary:#0a1628; --bg-secondary:#0d1f3c; --bg-card:#1a3a5c; --text-primary:#e0e0e0; --text-secondary:#8ab4d8; --border-color:#1e3a5f; }
-        .theme-black { --bg-primary:#0a0a0a; --bg-secondary:#111111; --bg-card:#1a1a1a; --text-primary:#ffffff; --text-secondary:#888888; --border-color:#2a2a2a; }
-        .theme-purple { --bg-primary:#1a0a2e; --bg-secondary:#2d1b4e; --bg-card:#3d2b5e; --text-primary:#e8d5f5; --text-secondary:#b794d4; --border-color:#4a2c7a; }
-        .theme-darkred { --bg-primary:#1a0505; --bg-secondary:#2b0a0a; --bg-card:#3d1212; --text-primary:#ffe6e6; --text-secondary:#a87b7b; --border-color:#5c1a1a; }
-        .theme-darkbrown { --bg-primary:#1e120e; --bg-secondary:#331f17; --bg-card:#4a2d22; --text-primary:#e8dcd4; --text-secondary:#a89480; --border-color:#5c3a26; }
-        
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Inter', sans-serif;
@@ -80,66 +163,171 @@
         .logo-icon { width: 50px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; animation: float 3s ease-in-out infinite; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
         h1 { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .settings-btn {
-            background: rgba(26, 26, 26, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 10px 18px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-        }
+.settings-btn {
+    position: fixed;
+    top: 20px;
+    right: 25px;
+
+    z-index: 2000;
+
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+
+    padding: 10px 18px;
+    border-radius: 40px;
+
+    cursor: pointer;
+    font-size: 0.85rem;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
         .settings-btn:hover {
             transform: translateY(-2px);
             border-color: var(--accent-blue);
-            background: rgba(33, 150, 243, 0.1);
+            background: var(--bg-card);
         }
         
         .stats-section { margin-bottom: 40px; }
         .stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .stats-title { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         .toggle-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
-        .toggle-stat-btn { background: rgba(26, 26, 26, 0.7); backdrop-filter: blur(10px); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px; }
-        .toggle-stat-btn.active { background: var(--accent-blue); color: #fff; }
+.toggle-stat-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+
+    padding: 8px 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 0.8rem;
+
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.toggle-stat-btn:not(.active) {
+    opacity: 0.85;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+.toggle-stat-btn.active {
+    background: var(--accent-blue);
+    color: #fff;
+    opacity: 1;
+}
         .hero-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
-        .hero-stat { background: rgba(26, 26, 26, 0.6); backdrop-filter: blur(10px); border: 1px solid var(--border-color); border-radius: 20px; padding: 20px; text-align: center; transition: all 0.3s ease; }
+        .hero-stat { background: var(--bg-card); backdrop-filter: blur(10px); border: 1px solid var(--border-color); border-radius: 20px; padding: 20px; text-align: center; transition: all 0.3s ease; }
         .hero-stat.hidden { display: none; }
         .hero-stat .value { font-size: 2rem; font-weight: 800; color: var(--accent-blue); }
         .hero-stat .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
         
-        .main-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; margin-bottom: 40px; }
-        .feature-card { background: rgba(26, 26, 26, 0.6); backdrop-filter: blur(10px); border: 1px solid var(--border-color); border-radius: 20px; padding: 28px 24px; cursor: pointer; transition: all 0.4s; text-decoration: none; display: flex; flex-direction: column; position: relative; overflow: hidden; color: inherit; }
-        .feature-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); transform: scaleX(0); transform-origin: left; transition: transform 0.4s ease; }
-        .feature-card:hover::after { transform: scaleX(1); }
-        .feature-card:hover { transform: translateY(-6px); border-color: rgba(102, 126, 234, 0.5); box-shadow: 0 20px 35px rgba(0,0,0,0.3); }
-        .feature-card.big { grid-column: span 2; }
+/* ===== FEATURE CARDS CLEAN ===== */
+.feature-arrow {
+    margin-top: 15px;
+    text-align: right;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+}
+.main-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    margin-bottom: 40px;
+}
+.feature-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 28px 24px;
+
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+
+    position: relative;
+    overflow: hidden;
+
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+}
+
+.feature-card h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.feature-card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* BIG CARDS */
+.feature-card.big {
+    grid-column: span 2;
+}
+.feature-card h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary); /* 🔥 FIX */
+}
+
+.feature-card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.feature-card:nth-child(1) .feature-icon {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.feature-card:nth-child(2) .feature-icon {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+}
+
+.feature-card:nth-child(3) .feature-icon {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+.feature-card:nth-child(4) .feature-icon {
+    background: linear-gradient(135deg, #43e97b, #38f9d7);
+}
+
+.feature-card:nth-child(5) .feature-icon {
+    background: linear-gradient(135deg, #fa709a, #fee140);
+}
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
         .feature-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 18px; transition: all 0.3s ease; }
-        .feature-card:nth-child(1) .feature-icon { background: linear-gradient(135deg, #667eea, #764ba2); }
-        .feature-card:nth-child(2) .feature-icon { background: linear-gradient(135deg, #f093fb, #f5576c); }
-        .feature-card:nth-child(3) .feature-icon { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-        .feature-card:nth-child(4) .feature-icon { background: linear-gradient(135deg, #43e97b, #38f9d7); }
-        .feature-card:nth-child(5) .feature-icon { background: linear-gradient(135deg, #fa709a, #fee140); }
-        .feature-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
-        .feature-card p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
-        .feature-arrow { margin-top: 15px; text-align: right; opacity: 0; transform: translateX(-10px); transition: all 0.3s ease; }
-        .feature-card:hover .feature-arrow { opacity: 1; transform: translateX(0); }
         
         .sessions-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-        .session-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.3); border-radius: 10px; font-size: 0.85rem; }
+        .session-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-card); border-radius: 10px; font-size: 0.85rem; }
         .session-status { font-weight: 600; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; background: #333; color: #888; }
         .session-status.active { background: var(--accent-green); color: #000; }
         .current-time { margin-top: 12px; text-align: center; font-size: 0.75rem; color: var(--text-secondary); font-family: monospace; }
         
         .market-section {
             margin-top: 40px;
-            background: rgba(26, 26, 26, 0.4);
+            background: var(--bg-card);
             backdrop-filter: blur(10px);
             border-radius: 24px;
             padding: 30px;
@@ -161,7 +349,7 @@
             gap: 20px;
         }
         .market-card {
-            background: rgba(0, 0, 0, 0.3);
+            background: var(--bg-card);
             border-radius: 16px;
             padding: 20px;
             text-align: center;
@@ -176,31 +364,34 @@
         .market-name { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 5px; }
         .market-price { font-size: 1.3rem; font-weight: 700; margin-bottom: 5px; }
         .market-change { font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; display: inline-block; }
-        .market-change.up { color: var(--accent-green); background: rgba(0, 200, 83, 0.1); }
-        .market-change.down { color: var(--accent-red); background: rgba(255, 82, 82, 0.1); }
+        .market-change.up { color: var(--accent-green); background: var(--bg-card); }
+        .market-change.down { color: var(--accent-red); background: var(--bg-card); }
         .last-update { text-align: center; margin-top: 20px; font-size: 0.7rem; color: var(--text-secondary); }
         
-        .rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        .rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-card); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
         .rules-modal.active { display: flex; }
         .rules-modal-content { background: var(--bg-card); padding: 35px; border-radius: 24px; border: 1px solid var(--accent-warn); max-width: 400px; text-align: center; }
         .rules-modal h2 { color: var(--accent-warn); margin-bottom: 15px; font-size: 1.3rem; }
         .rules-modal p { color: var(--text-secondary); margin-bottom: 25px; }
         .rules-btn { background: var(--accent-warn); color: #000; border: none; padding: 12px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.3s; }
-        
-        /* Settings Modal */
-        .settings-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 3000;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(10px);
-        }
+.settings-modal {
+    display: none;
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0,0,0,0.6); /* 🔥 SAME AS INDEX */
+    backdrop-filter: blur(10px);
+
+    z-index: 99999;
+
+    justify-content: center;
+    align-items: center;
+}
         .settings-modal.active { display: flex; }
         .settings-modal-content {
             background: var(--bg-card);
@@ -225,7 +416,7 @@
             -webkit-text-fill-color: transparent;
         }
         .settings-option {
-            background: rgba(0,0,0,0.3);
+            background: var(--bg-card);
             border-radius: 16px;
             padding: 15px;
             margin-bottom: 15px;
@@ -252,23 +443,31 @@
             color: var(--accent-blue);
             transform: translateX(5px);
         }
-        .theme-options {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .theme-color {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        .theme-color:hover {
-            transform: scale(1.1);
-            border-color: var(--accent-blue);
-        }
+.theme-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.theme-color {
+    height: 60px;
+    border-radius: 12px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.theme-color:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-blue);
+}
         .settings-save-btn {
             background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
             color: #fff;
@@ -309,34 +508,75 @@
         @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } .hero-stats { grid-template-columns: 1fr; } .market-grid { grid-template-columns: 1fr; } .header { flex-direction: column; text-align: center; } .logo { justify-content: center; } body { padding-left: 20px !important; } .sidebar { display: none; } }
     </style>
 </head>
+<script src="app.js"></script>
 <body>
-    <div class="sidebar">
-        <a href="index.html" class="sidebar-item sidebar-big">🏠</a>
-        <a href="trading.html" class="sidebar-item sidebar-big active">📈</a>
-        <div class="sidebar-divider"></div>
-        <a href="calendar.html" class="sidebar-item">📅</a>
-        <a href="journal.html" class="sidebar-item">📝</a>
-        <a href="propfirms.html" class="sidebar-item">💼</a>
-        <a href="rules.html" class="sidebar-item">⚙️</a>
-        <a href="analytics.html" class="sidebar-item">📊</a>
-        <a href="payouts.html" class="sidebar-item">💰</a>
-    </div>
+<div class="sidebar">
+
+<a href="index.html" class="sidebar-item" data-name="Dashboard">
+<i data-lucide="layout-dashboard"></i>
+</a>
+
+<a href="trading.html" class="sidebar-item active" data-name="Trading">
+<i data-lucide="trending-up"></i>
+</a>
+
+<div class="sidebar-divider"></div>
+
+<a href="calendar.html" class="sidebar-item" data-name="Calendar">
+<i data-lucide="calendar"></i>
+</a>
+
+<a href="journal.html" class="sidebar-item" data-name="Journal">
+<i data-lucide="book-open"></i>
+</a>
+
+<a href="propfirms.html" class="sidebar-item" data-name="Prop Firms">
+<i data-lucide="briefcase"></i>
+</a>
+
+<a href="rules.html" class="sidebar-item" data-name="Rules">
+<i data-lucide="settings"></i>
+</a>
+
+<a href="analytics.html" class="sidebar-item" data-name="Analytics">
+<i data-lucide="bar-chart-3"></i>
+</a>
+
+<a href="payouts.html" class="sidebar-item" data-name="Payouts">
+<i data-lucide="wallet"></i>
+</a>
+
+</div>
     
     <div class="loading-screen" id="loadingScreen"><div class="loader"></div></div>
     <div class="container">
         <div class="header">
-            <div class="logo"><div class="logo-icon">📊</div><h1>Trading Dashboard</h1></div>
-            <button class="settings-btn" onclick="openSettingsModal()">⚙️ Settings</button>
+<div class="logo-icon">
+    <i data-lucide="bar-chart-3"></i>
+</div>
+
+<button class="settings-btn" onclick="togglePanel()">
+    <i data-lucide="settings"></i> Settings
+</button>
         </div>
 
         <div class="stats-section">
             <div class="stats-header">
-                <div class="stats-title"><span>📊</span> Trading Overview</div>
-                <div class="toggle-buttons">
-                    <button class="toggle-stat-btn active" data-stat="totalTrades">📈 Total Trades</button>
-                    <button class="toggle-stat-btn active" data-stat="winrate">🎯 Win Rate</button>
-                    <button class="toggle-stat-btn active" data-stat="totalPL">💰 Total P/L</button>
-                    <button class="toggle-stat-btn active" data-stat="avgRR">⚖️ Avg R:R</button>
+                <button class="toggle-stat-btn active" data-stat="totalTrades">
+    <i data-lucide="trending-up"></i> Total Trades
+</button>
+
+<button class="toggle-stat-btn active" data-stat="winrate">
+    <i data-lucide="target"></i> Win Rate
+</button>
+
+<button class="toggle-stat-btn active" data-stat="totalPL">
+    <i data-lucide="dollar-sign"></i> Total P/L
+</button>
+
+<button class="toggle-stat-btn active" data-stat="avgRR">
+    <i data-lucide="scale"></i> Avg R:R
+</button>
                 </div>
             </div>
             <div class="hero-stats">
@@ -347,29 +587,86 @@
             </div>
         </div>
 
-        <div class="main-grid">
-            <a href="calendar.html" class="feature-card big"><div class="feature-icon">📅</div><h3>Calendar</h3><p>Performance charts & market sentiment</p><div class="feature-arrow">→</div></a>
-            <a href="journal.html" class="feature-card big"><div class="feature-icon">📈</div><h3>Create a Trade</h3><p>Log trades & track progress</p><div class="feature-arrow">→</div></a>
-            <a href="propfirms.html" class="feature-card"><div class="feature-icon">💼</div><h3>Propfirms</h3><p>Manage accounts & drawdowns</p><div class="feature-arrow">→</div></a>
-            <a href="rules.html" class="feature-card"><div class="feature-icon">⚙️</div><h3>Trading Rules</h3><p>Configure limits & alerts</p><div class="feature-arrow">→</div></a>
-            <a href="analytics.html" class="feature-card"><div class="feature-icon">📊</div><h3>Analytics</h3><p>Win rates & session stats</p><div class="feature-arrow">→</div></a>
-            <div class="feature-card" style="cursor:default">
-                <div class="feature-icon">🌍</div>
-                <h3>Live Sessions</h3>
-                <div class="sessions-list">
-                    <div class="session-row"><span>🇯🇵 Asia</span><span class="session-status" id="asiaStatus">Closed</span></div>
-                    <div class="session-row"><span>🇬🇧 London</span><span class="session-status" id="londonStatus">Closed</span></div>
-                    <div class="session-row"><span>🇺🇸 New York</span><span class="session-status" id="nyStatus">Closed</span></div>
-                </div>
-                <div class="current-time" id="currentTime">--:-- EST</div>
+   <div class="main-grid">
+
+    <a href="calendar.html" class="feature-card big">
+        <div class="feature-icon">
+            <i data-lucide="calendar"></i>
+        </div>
+        <h3>Calendar</h3>
+        <p>Performance charts & market sentiment</p>
+        <div class="feature-arrow">→</div>
+    </a>
+
+    <a href="journal.html" class="feature-card big">
+        <div class="feature-icon">
+            <i data-lucide="trending-up"></i>
+        </div>
+        <h3>Create a Trade</h3>
+        <p>Log trades & track progress</p>
+        <div class="feature-arrow">→</div>
+    </a>
+
+    <a href="propfirms.html" class="feature-card">
+        <div class="feature-icon">
+            <i data-lucide="briefcase"></i>
+        </div>
+        <h3>Propfirms</h3>
+        <p>Manage accounts & drawdowns</p>
+        <div class="feature-arrow">→</div>
+    </a>
+
+    <a href="rules.html" class="feature-card">
+        <div class="feature-icon">
+            <i data-lucide="settings"></i>
+        </div>
+        <h3>Trading Rules</h3>
+        <p>Configure limits & alerts</p>
+        <div class="feature-arrow">→</div>
+    </a>
+
+    <a href="analytics.html" class="feature-card">
+        <div class="feature-icon">
+            <i data-lucide="bar-chart-3"></i>
+        </div>
+        <h3>Analytics</h3>
+        <p>Win rates & session stats</p>
+        <div class="feature-arrow">→</div>
+    </a>
+
+    <div class="feature-card" style="cursor:default">
+        <div class="feature-icon">
+            <i data-lucide="globe"></i>
+        </div>
+        <h3>Live Sessions</h3>
+
+        <div class="sessions-list">
+            <div class="session-row">
+                <span>🇯🇵 Asia</span>
+                <span class="session-status" id="asiaStatus">Closed</span>
+            </div>
+
+            <div class="session-row">
+                <span>🇬🇧 London</span>
+                <span class="session-status" id="londonStatus">Closed</span>
+            </div>
+
+            <div class="session-row">
+                <span>🇺🇸 New York</span>
+                <span class="session-status" id="nyStatus">Closed</span>
             </div>
         </div>
+
+        <div class="current-time" id="currentTime">--:-- EST</div>
+    </div>
+
+</div>
 
         <!-- Live Market Data Section - Nasdaq removed -->
         <div class="market-section">
             <div class="market-title">
-                <span>📈 Live Market Data</span>
-                <span style="font-size: 0.7rem; background: rgba(0,0,0,0.3); padding: 3px 10px; border-radius: 20px;" id="updateTimer">Updating in 60s</span>
+                <span><i data-lucide="trending-up"></i> Live Market Data</span>
+                <span style="font-size: 0.7rem; background: var(--bg-card); padding: 3px 10px; border-radius: 20px;" id="updateTimer">Updating in 60s</span>
             </div>
             <div class="market-grid">
                 <div class="market-card">
@@ -396,37 +693,6 @@
 
         <div class="footer"><p>Created by <a href="#">PMbanks</a> • Built for disciplined traders</p></div>
     </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="settings-modal">
-        <div class="settings-modal-content">
-            <h3>⚙️ Settings</h3>
-            <div class="settings-option">
-                <label>🎨 Theme</label>
-                <div class="theme-options">
-                    <div class="theme-color" style="background:#0d0d0d;" onclick="setTheme('black')" title="Dark"></div>
-                    <div class="theme-color" style="background:#f5f5f5;" onclick="setTheme('white')" title="Light"></div>
-                    <div class="theme-color" style="background:#0a1628;" onclick="setTheme('darkblue')" title="Dark Blue"></div>
-                    <div class="theme-color" style="background:#1a0a2e;" onclick="setTheme('purple')" title="Purple"></div>
-                    <div class="theme-color" style="background:#1a0505;" onclick="setTheme('darkred')" title="Dark Red"></div>
-                    <div class="theme-color" style="background:#1e120e;" onclick="setTheme('darkbrown')" title="Dark Brown"></div>
-                </div>
-            </div>
-            <div class="settings-option">
-                <label>📷 Social</label>
-                <a href="https://www.instagram.com/eddwinnq/" target="_blank">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                    @eddwinnq
-                </a>
-            </div>
-            <div class="settings-option">
-                <label>🗑️ Danger Zone</label>
-                <button onclick="clearAllData()" style="background: rgba(255,82,82,0.15); border: 1px solid var(--accent-red); color: var(--accent-red); padding: 10px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: 600;">Reset All Data</button>
-            </div>
-            <button class="close-settings" onclick="closeSettingsModal()">Close</button>
-        </div>
-    </div>
-
     <div id="rulesModal" class="rules-modal">
         <div class="rules-modal-content">
             <h2>⚠️ Set Your Rules First!</h2>
@@ -436,17 +702,14 @@
     </div>
 
     <script>
-        // ============ THEME SYSTEM ============
-        function setTheme(theme) {
-            document.body.className = 'theme-' + theme;
-            localStorage.setItem('theme', theme);
-            showToast(`🎨 Theme changed to ${theme}`);
-        }
-        
-        function applySavedTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'black';
-            document.body.className = 'theme-' + savedTheme;
-        }
+function openPage(id){
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
+function applySavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'theme-black';
+    document.body.className = savedTheme;
+}
         applySavedTheme();
         
         function showToast(message) {
@@ -471,14 +734,6 @@
         }
         
         // ============ SETTINGS MODAL ============
-        function openSettingsModal() {
-            document.getElementById('settingsModal').classList.add('active');
-        }
-        
-        function closeSettingsModal() {
-            document.getElementById('settingsModal').classList.remove('active');
-        }
-        
         window.onclick = (e) => {
             if (e.target === document.getElementById('settingsModal')) closeSettingsModal();
             if (e.target === document.getElementById('rulesModal')) document.getElementById('rulesModal').classList.remove('active');
@@ -650,5 +905,39 @@
         
         window.addEventListener('load', () => setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 500));
     </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.addEventListener('mouseenter', () => {
+            const rect = item.getBoundingClientRect();
+            item.style.setProperty('--tooltip-top', rect.top + rect.height / 2 + 'px');
+        });
+    });
+
+    lucide.createIcons();
+});
+</script>
+<div class="settings-modal" id="settingsModal">
+    <div class="settings-modal-content">
+        <h3>Settings</h3>
+
+        <div class="settings-option">
+            <label>Theme</label>
+            <div class="theme-options">
+
+                <div class="theme-color" onclick="setTheme('theme-black')" style="background:#000;color:#fff;">Dark</div>
+                <div class="theme-color" onclick="setTheme('theme-white')" style="background:#fff;color:#000;">Light</div>
+                <div class="theme-color" onclick="setTheme('theme-darkblue')" style="background:#0a1628;color:#fff;">Blue</div>
+
+                <div class="theme-color" onclick="setTheme('theme-purple')" style="background:#9b5cff;color:#fff;">Purple</div>
+                <div class="theme-color" onclick="setTheme('theme-darkred')" style="background:#ff5252;color:#fff;">Red</div>
+                <div class="theme-color" onclick="setTheme('theme-darkbrown')" style="background:#1e120e;color:#fff;">Brown</div>
+
+            </div>
+        </div>
+
+        <button class="close-settings" onclick="closeSettingsModal()">Close</button>
+    </div>
+</div>
 </body>
 </html>
