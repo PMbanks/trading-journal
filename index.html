@@ -724,7 +724,6 @@ transform:translateY(0);
 
     <button onclick="loginGoogle()">Continue with Google</button>
 </div>
-        <div style="font-size:12px;opacity:0.5;">or</div>
     <!-- USERNAME SETUP -->
     <div id="usernameSetup" class="authPopup" style="display:none;">
         <h2>Create Username</h2>
@@ -766,9 +765,7 @@ Welcome back, <span id="username"></span>
 </div>
 
 <div class="top">
-    <div id="loginBtn" class="settings">Login</div>
     <div id="profileBtn" class="settings">👤</div>
-    <div class="settings" onclick="logout()">🚪</div>
     <div class="settings" onclick="togglePanel()">
         <i data-lucide="settings"></i>
     </div>
@@ -878,24 +875,99 @@ function loginGoogle(){
     auth.signInWithPopup(provider)
     .then(result=>{
         const user = result.user;
- document.getElementById("authScreen").style.display = "none";
         checkUsername(user); // keeps your username system
     })
     .catch(err=>console.error(err));
 }
 function checkUsername(user){
+
     const ref = db.collection("users").doc(user.uid);
 
     ref.get().then(doc=>{
-        if(!doc.exists){
+
+        // first login → force username
+        if(!doc.exists || !doc.data().username){
+
+            document.getElementById("authScreen").style.display = "flex";
+
             showUsernameSetup();
+
         } else {
+
             applyUsername(doc.data().username);
+
+            document.getElementById("authScreen").style.display = "none";
         }
     });
 }
+function changeName(){
+
+    const n1 = document.getElementById("n1").value.trim().toLowerCase();
+    const n2 = document.getElementById("n2").value.trim().toLowerCase();
+
+    if(n1 !== n2){
+        toast("Names do not match");
+        return;
+    }
+
+    if(n1.length < 3){
+        toast("Name too short");
+        return;
+    }
+
+    const user = auth.currentUser;
+
+    db.collection("users").doc(user.uid).get().then(doc=>{
+
+        const data = doc.data();
+
+        const week = 7 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+
+        if(data.lastNameChange && now - data.lastNameChange < week){
+
+            const days = Math.ceil(
+                (week - (now - data.lastNameChange))
+                / (1000*60*60*24)
+            );
+
+            toast("Wait " + days + " days");
+            return;
+        }
+
+        // duplicate check
+        db.collection("users")
+        .where("username","==",n1)
+        .get()
+        .then(snapshot=>{
+
+            if(!snapshot.empty){
+                toast("Username taken");
+                return;
+            }
+
+            db.collection("users").doc(user.uid).update({
+                username:n1,
+                lastNameChange:now
+            }).then(()=>{
+
+                applyUsername(n1);
+
+                toast("Name changed ✅");
+
+                updateNameCooldown();
+            });
+
+        });
+
+    });
+}
 function showUsernameSetup(){
+
+    document.getElementById("authScreen").style.display = "flex";
+
     document.getElementById("loginBox").style.display = "none";
+
     document.getElementById("usernameSetup").style.display = "block";
 
     setTimeout(()=>{
@@ -903,9 +975,13 @@ function showUsernameSetup(){
     },10);
 }
 function saveUsername(){
-    const username = document.getElementById("newUsername").value.trim();
+
+    const username = document.getElementById("newUsername")
+    .value
+    .trim()
+    .toLowerCase();
+
     const user = auth.currentUser;
-    
 
     if(!username){
         toast("Enter username");
@@ -917,7 +993,12 @@ function saveUsername(){
         return;
     }
 
-    // 🔥 CHECK DUPLICATE
+    if(!/^[a-zA-Z0-9_]+$/.test(username)){
+        toast("Only letters, numbers, _");
+        return;
+    }
+
+    // check duplicate
     db.collection("users")
     .where("username", "==", username)
     .get()
@@ -928,23 +1009,20 @@ function saveUsername(){
             return;
         }
 
-        // ✅ SAFE TO SAVE
+        // save
         db.collection("users").doc(user.uid).set({
             username: username,
-            photo: user.photoURL || ""
+            photo: user.photoURL || "",
+            email: user.email,
+            createdAt: Date.now(),
+            lastNameChange: Date.now()
         }).then(()=>{
 
             applyUsername(username);
 
-            document.getElementById("usernameSetup").style.display = "none";
             document.getElementById("authScreen").style.display = "none";
 
             toast("Username created ✅");
-            if(!/^[a-zA-Z0-9_]+$/.test(username)){
-    toast("Only letters, numbers, _");
-    return;
-}const username = document.getElementById("newUsername")
-.value.trim().toLowerCase();
         });
 
     });
@@ -1587,9 +1665,6 @@ document.addEventListener("mouseup", ()=>{
 
     panel.style.transform = null;
 });
-document.getElementById("loginBtn").onclick = () => {
-    document.getElementById("authScreen").style.display = "flex";
-};
 </script>
 </body>
 </html>
