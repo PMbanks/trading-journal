@@ -37,6 +37,49 @@ width:450px;
 max-width:90%;
 box-shadow:0 0 50px rgba(0,0,0,0.7);
 }
+#authScreen{
+position:fixed;
+inset:0;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:15px;
+
+background:radial-gradient(circle at center,#111827,#020617);
+z-index:2000;
+}
+
+#authScreen h2{
+font-size:28px;
+margin-bottom:10px;
+}
+
+#authScreen input{
+width:250px;
+padding:12px;
+border-radius:10px;
+border:1px solid rgba(255,255,255,0.1);
+background:#0f172a;
+color:white;
+outline:none;
+}
+
+#authScreen button{
+width:260px;
+padding:12px;
+border-radius:10px;
+border:none;
+background:linear-gradient(45deg,#667eea,#764ba2);
+color:white;
+cursor:pointer;
+transition:0.25s;
+}
+
+#authScreen button:hover{
+transform:scale(1.05);
+box-shadow:0 0 15px #667eea;
+}
 #profileStats{
 margin-top:15px;
 line-height:1.6;
@@ -646,6 +689,20 @@ transform:translateY(0);
 </head>
 
 <body>
+    <div id="authScreen">
+    <h2>Login / Register</h2>
+
+    <input id="email" placeholder="Email" class="input">
+    <input id="password" type="password" placeholder="Password" class="input">
+
+    <button onclick="register()">Register</button>
+    <button onclick="loginEmail()">Login</button>
+    <button onclick="resetPassword()">Forgot Password</button>
+    <button onclick="resendVerification()">Resend Verification</button>
+    <div style="font-size:12px;opacity:0.7;margin-top:5px;">
+You must verify your email before playing
+</div>
+</div>
 <div id="leaderboard">
     <div class="lb-title">Leaderboard</div>
 
@@ -682,6 +739,7 @@ Welcome back, <span id="username"></span>
 <div class="top">
     <div id="loginBtn" class="settings">Login</div>
     <div id="profileBtn" class="settings">👤</div>
+    <div class="settings" onclick="logout()">🚪</div>
     <div class="settings" onclick="togglePanel()">
         <i data-lucide="settings"></i>
     </div>
@@ -785,23 +843,85 @@ Welcome back, <span id="username"></span>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script> 
-function login(){
-    const provider = new firebase.auth.GoogleAuthProvider();
+function register(){
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    auth.signInWithPopup(provider).then(result => {
+    if(!email || !password){
+        toast("Enter email and password");
+        return;
+    }
 
+    auth.createUserWithEmailAndPassword(email, password)
+    .then(result=>{
         const user = result.user;
 
-        localStorage.setItem("username", user.displayName);
-        localStorage.setItem("photo", user.photoURL);
+        // 🔥 send verification email
+        user.sendEmailVerification().then(()=>{
+            toast("📧 Verification email sent!");
+        });
 
-        document.getElementById("username").innerText = user.displayName;
-
-        toast("Logged in as " + user.displayName);
-
-    }).catch(err=>{
-        console.log(err);
+        auth.signOut(); // force re-login after verification
+    })
+    .catch(err=>{
+        toast(err.message);
     });
+}
+function logout(){
+    auth.signOut().then(()=>{
+        toast("Logged out");
+    });
+}
+function resetPassword(){
+    const email = document.getElementById("email").value.trim();
+
+    if(!email){
+        toast("Enter your email first");
+        return;
+    }
+
+    auth.sendPasswordResetEmail(email)
+    .then(()=>{
+        toast("📧 Password reset email sent!");
+    })
+    .catch(err=>{
+        toast(err.message);
+    });
+}
+function resendVerification(){
+    const user = auth.currentUser;
+
+    if(!user){
+        toast("Login first");
+        return;
+    }
+
+    if(user.emailVerified){
+        toast("Already verified");
+        return;
+    }
+
+    user.sendEmailVerification()
+    .then(()=>toast("📧 Email sent again"))
+    .catch(err=>toast(err.message));
+}
+function loginEmail(){
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    auth.signInWithEmailAndPassword(email, password)
+    .then(result=>{
+        const user = result.user;
+
+        if(!user.emailVerified){
+            toast("📧 Please verify your email first");
+            auth.signOut();
+            return;
+        }
+
+        toast("Logged in!");
+    })
+    .catch(err=>toast(err.message));
 }
 const firebaseConfig = {
 apiKey: "AIzaSyA7wlGw9itPf3rLzzCuFzcJyiNFHT5k6F8",   
@@ -816,9 +936,29 @@ apiKey: "AIzaSyA7wlGw9itPf3rLzzCuFzcJyiNFHT5k6F8",
 firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
     const db = firebase.firestore();
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+auth.onAuthStateChanged(user=>{
+
+    if(!user){
+        document.getElementById("authScreen").style.display = "flex";
+        return;
+    }
+
+    if(!user.emailVerified){
+        document.getElementById("authScreen").style.display = "flex";
+        toast("📧 Verify your email before logging in");
+        auth.signOut();
+        return;
+    }
+
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("username").innerText = user.email + " ✅";
+    document.getElementById("loginBtn").innerText = "👤";
+});
     const scoresDiv = document.getElementById("scores");
 function updateLeaderboard(score){
-    const username = localStorage.getItem("username") || "Anonymous";
+    const username = auth.currentUser?.email;
+    if(!username) return;
     const photo = localStorage.getItem("photo") || null;
     const avatar = localStorage.getItem("avatar") || null;
 
@@ -849,7 +989,7 @@ db.collection(currentBoard)
     setTimeout(() => {
         scoresDiv.innerHTML = "";
 
-        const username = localStorage.getItem("username");  
+        const username = auth.currentUser?.email;
         newData.forEach((data, index) => {
 
             const rank = index + 1;
@@ -922,7 +1062,7 @@ function saveToBoard(collection, data){
     const ref = db.collection(collection).doc(data.name);
 
     ref.get().then(doc=>{
-        if(!doc.exists || data.score > doc.data().score){
+        if(!doc.exists || data.score >= doc.data().score){
             ref.set(data);
         }
     });
@@ -961,6 +1101,13 @@ function buyAvatar(icon){
     toast("Avatar equipped " + icon);
 }
 function startGame(){
+    const user = auth.currentUser;
+
+    if(!user){
+        toast("⚠️ Login required");
+        return;
+    }
+
     score = 0;
     timeLeft = 30;
     gameActive = true;
@@ -980,7 +1127,7 @@ function startGame(){
     },1000);
 }
 function showProfile(){
-    const username = localStorage.getItem("username");
+   const username = auth.currentUser.email;
     if(!username) return;
 
     db.collection("profiles").doc(username).get().then(doc=>{
@@ -1040,7 +1187,7 @@ function endGame(){
     clearInterval(timer);
     gameActive = false;
 
-    const rank = getRank(score);
+    const rank = "#";
 showProfile();
     showFinalScore(score);
 if(score > maxScore){
@@ -1068,8 +1215,7 @@ setTimeout(()=>{
 },3000);
 }
 function saveProfile(score){
-    const username = localStorage.getItem("username");
-    if(!username) return;
+const username = auth.currentUser?.email;    if(!username) return;
 
     const ref = db.collection("profiles").doc(username);
 
@@ -1151,18 +1297,11 @@ applyTheme();
 toast("Premium unlocked 🚀");
 }else toast("Wrong password");
 }
-
-function loadUser(){
-let n=localStorage.getItem("username");
-if(!n){n=prompt("Enter your name:");localStorage.setItem("username",n);}
-username.innerText=n;
-}
-
 function togglePanel(){
     document.body.classList.toggle("panel-open");
 }
 function openProfile(){
-    const username = localStorage.getItem("username");
+    const username = auth.currentUser?.email;
     if(!username) return;
 
     db.collection("profiles").doc(username).get().then(doc=>{
@@ -1198,7 +1337,7 @@ function resetAll(){
     if(confirm("Reset everything? This will also delete your leaderboard score.")){
         if(confirm("This cannot be undone! Continue?")){
 
-            const username = localStorage.getItem("username");
+            const username = auth.currentUser?.email;
 
             if(username){
                 ["leaderboard_all","leaderboard_daily","leaderboard_weekly"].forEach(col=>{
@@ -1216,33 +1355,6 @@ function resetAll(){
             localStorage.clear();
             location.reload();
         }
-    }
-}
-function changeName(){
-    const now = Date.now();
-    const week = 7 * 24 * 60 * 60 * 1000;
-
-    let lastChange = localStorage.getItem("nameChange");
-
-    if(lastChange && now - lastChange < week){
-        let remaining = week - (now - lastChange);
-        let days = Math.ceil(remaining / (1000*60*60*24));
-
-        toast("⏳ Wait " + days + " days to change name");
-        return;
-    }
-
-    let a = n1.value, b = n2.value;
-
-    if(a && a === b){
-        localStorage.setItem("username", a);
-        localStorage.setItem("nameChange", now);
-
-        toast("✅ Name updated");
-
-        setTimeout(()=>location.reload(),700);
-    } else {
-        toast("Names do not match");
     }
 }
 function go(p){
@@ -1268,8 +1380,6 @@ t.innerText=msg;
 t.classList.add("show");
 setTimeout(()=>t.classList.remove("show"),2000);
 }
-
-loadUser();
 applyTheme();
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -1378,7 +1488,6 @@ window.addEventListener("resize", () => {
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 });
-document.getElementById("loginBtn").onclick = login;
 document.getElementById("profileBtn").onclick = openProfile;
 function closeProfile(){
     document.getElementById("profileScreen").classList.remove("show");
