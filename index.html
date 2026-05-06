@@ -1162,14 +1162,28 @@ if(!/[a-zA-Z]/.test(username)){
             email: user.email,
             createdAt: Date.now(),
             lastNameChange: 0
-        }).then(()=>{
+}).then(()=>{
 
-            applyUsername(username);
+    applyUsername(username);
 
-            document.getElementById("authScreen").style.display = "none";
+    // close popup
+    document.getElementById("usernameSetup").classList.remove("show");
 
-            toast("Username created ✅");
-        });
+    document.getElementById("usernameSetup").style.display = "none";
+
+    document.getElementById("authScreen").style.display = "none";
+
+    // refresh profile data
+    openProfile();
+
+    toast("Username created ✅");
+
+    // force refresh page after first setup
+    setTimeout(()=>{
+        location.reload();
+    },800);
+
+});
 
     });
 }
