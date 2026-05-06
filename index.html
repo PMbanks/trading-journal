@@ -1575,23 +1575,20 @@ function openProfile(){
         .get()
         .then(snapshot=>{
 
-            let rank = 0;
+            let rank = "Unranked";
             let bestScore = 0;
-            let bestDate = "Unknown";
 
-            snapshot.forEach((doc,index)=>{
-
-                const d = doc.data();
+            snapshot.docs.forEach((doc,index)=>{
 
                 if(doc.id === user.uid){
-                    rank = index + 1;
-                    bestScore = d.score || 0;
 
-                    if(d.date){
-                        bestDate = new Date(d.date)
-                        .toLocaleDateString();
-                    }
+                    rank = "#" + (index + 1);
+
+                    const d = doc.data();
+
+                    bestScore = d.score || 0;
                 }
+
             });
 
             const created = u.createdAt
@@ -1603,13 +1600,11 @@ function openProfile(){
 
 <div style="font-size:14px;opacity:0.8;">
 📧 ${u.email || "Hidden"}
-</div>
+</div><br>
 
-🌍 Global Rank: ${rank ? "#" + rank : "Unranked"}
+🌍 Global Rank: ${rank}<br><br>
 
 🏆 Points: ${bestScore}<br><br>
-
-📅 Best Score Date: ${bestDate}<br><br>
 
 🕒 Account Created: ${created}
 `;
