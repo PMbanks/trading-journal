@@ -905,6 +905,10 @@ function changeName(){
     }
 
     if(n1.length < 3){
+        if(!/[a-zA-Z]/.test(username)){
+    toast("Must contain letters");
+    return;
+}
         toast("Name too short");
         return;
     }
@@ -935,7 +939,7 @@ function changeName(){
         .get()
         .then(snapshot=>{
 
-            if(!snapshot.empty){
+           if(!snapshot.empty && snapshot.docs[0].id !== user.uid){
                 toast("Username taken");
                 return;
             }
@@ -945,7 +949,23 @@ function changeName(){
                 lastNameChange:now
             }).then(()=>{
 
-                applyUsername(n1);
+                
+                db.collection("leaderboard_all")
+.doc(user.uid)
+.get()
+.then(lb=>{
+
+    if(lb.exists){
+
+        db.collection("leaderboard_all")
+        .doc(user.uid)
+        .update({
+            name:n1
+        });
+
+    }
+
+});
 
                 toast("Name changed ✅");
 
@@ -982,7 +1002,10 @@ function saveUsername(){
         return;
     }
 
-    if(username.length < 3){
+    if(username.length < 3){if(!/[a-zA-Z]/.test(username)){
+    toast("Must contain letters");
+    return;
+}
         toast("Username too short");
         return;
     }
@@ -1009,7 +1032,7 @@ function saveUsername(){
             photo: user.photoURL || "",
             email: user.email,
             createdAt: Date.now(),
-            lastNameChange: Date.now()
+            lastNameChange: 0
         }).then(()=>{
 
             applyUsername(username);
@@ -1050,9 +1073,6 @@ auth.onAuthStateChanged(user=>{
         return;
     }
 
-    // user is already logged in → skip login screen
-    document.getElementById("authScreen").style.display = "none";
-
     checkUsername(user);
 });
 let previousPosition = null;
@@ -1064,7 +1084,12 @@ db.collection(currentBoard)
 .onSnapshot(snapshot => {
 
     let newData = [];
-    snapshot.forEach(doc => newData.push(doc.data()));
+   snapshot.forEach(doc => {
+    newData.push({
+        id: doc.id,
+        ...doc.data()
+    });
+});
 
     scoresDiv.style.opacity = 0;
 
@@ -1129,7 +1154,8 @@ function openStorePage(){
     window.location.href = "store.html";
 }
 function saveToBoard(collection, data){
-    const ref = db.collection(collection).doc(data.name);
+    const ref = db.collection(collection)
+.doc(auth.currentUser.uid);
 
     ref.get().then(doc=>{
         if(!doc.exists || data.score >= doc.data().score){
@@ -1138,26 +1164,55 @@ function saveToBoard(collection, data){
     });
 }
 function updateNameCooldown(){
+
     const el = document.getElementById("nameCooldown");
 
-    const now = Date.now();
-    const week = 7 * 24 * 60 * 60 * 1000;
+    const user = auth.currentUser;
 
-    let lastChange = localStorage.getItem("nameChange");
-
-    if(!lastChange){
-        el.innerText = "✅ You can change your name";
+    if(!user){
+        el.innerText = "";
         return;
     }
 
-    let remaining = week - (now - lastChange);
+    db.collection("users").doc(user.uid).get().then(doc=>{
 
-    if(remaining <= 0){
-        el.innerText = "✅ You can change your name";
-    } else {
-        let days = Math.ceil(remaining / (1000*60*60*24));
-        el.innerText = "⏳ Wait " + days + " days";
-    }
+        if(!doc.exists){
+            el.innerText = "";
+            return;
+        }
+
+        const data = doc.data();
+
+        const week = 7 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+
+        let lastChange = data.lastNameChange || 0;
+
+        let remaining = week - (now - lastChange);
+
+        if(remaining <= 0){
+
+            el.innerHTML = `
+            <span style="color:#4ade80;">
+                ✅ You can change your username
+            </span>
+            `;
+
+        } else {
+
+            const days = Math.ceil(
+                remaining / (1000 * 60 * 60 * 24)
+            );
+
+            el.innerHTML = `
+            <span style="color:#facc15;">
+                ⏳ Username cooldown: ${days} day${days > 1 ? "s" : ""}
+            </span>
+            `;
+        }
+
+    });
+
 }
 function buyAvatar(icon){
     localStorage.setItem("avatar", icon);
@@ -1192,27 +1247,6 @@ function startGame(){
         }
     },1000);
 }
-function showProfile(){
-   const user = auth.currentUser;
-if(!username) return;
-
-    db.collection("profiles").doc(username).get().then(doc=>{
-        if(!doc.exists){
-    document.getElementById("profileStats").innerHTML = "No data yet";
-    document.getElementById("profileScreen").classList.add("show");
-    return;
-}
-
-        const d = doc.data();
-
-        const box = document.getElementById("profileBox");
-        box.classList.add("show");
-
-        setTimeout(()=>{
-            box.classList.remove("show");
-        },4000);
-    });
-}
 function animateClimbVisual(newRank){
     const el = document.getElementById("yourRank");
 
@@ -1246,7 +1280,6 @@ function endGame(){
     gameActive = false;
 
     const rank = "#";
-showProfile();
     showFinalScore(score);
 if(score > maxScore){
     maxScore = score;
@@ -1264,9 +1297,11 @@ function updateLeaderboard(score){
     db.collection("users").doc(user.uid).get().then(doc=>{
         const username = doc.exists ? doc.data().username : "User";
 const data = {
+    uid: user.uid,
     name: username,
     score: score,
-    date: Date.now()
+    date: Date.now(),
+    photo: user.photoURL || ""
 };
 
         saveToBoard("leaderboard_all", data);
@@ -1366,7 +1401,7 @@ function openProfile(){
 
                 const d = doc.data();
 
-                if(d.name === u.username){
+                if(d.uid === user.uid){
                     rank = index + 1;
                     bestScore = d.score || 0;
 
@@ -1384,6 +1419,8 @@ function openProfile(){
             document.getElementById("profileStats").innerHTML = `
 👤 ${u.username}<br><br>
 
+📧 ${u.email || "Hidden"}<br><br>
+
 🌍 Global Rank: #${rank}<br><br>
 
 🏆 Points: ${bestScore}<br><br>
@@ -1400,18 +1437,6 @@ function openProfile(){
 
     });
 }
-
-        const d = doc.data();
-        const avg = Math.floor(d.totalScore / d.games);
-const user = auth.currentUser;
-
-document.getElementById("profileStats").innerHTML = `
-👤 ${d.username || "User"}<br><br>
-📧 ${user.email}<br><br>
-🏆 Best Ever: ${d.best}<br>
-⏱ Best Run: ${new Date(d.bestDate).toLocaleDateString()}
-`;
-        document.getElementById("profileScreen").classList.add("show");
 function openPage(id){
     if(id === "name"){
     updateNameCooldown();
@@ -1420,25 +1445,29 @@ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
 function resetAll(){
-    if(confirm("Reset everything? This will also delete your leaderboard score.")){
-        if(confirm("This cannot be undone! Continue?")){
 
-           const user = auth.currentUser;
+    if(confirm("Reset everything?")){
 
-            if(username){
-                ["leaderboard_all","leaderboard_daily","leaderboard_weekly"].forEach(col=>{
-                    db.collection(col)
-                    .where("name","==",username)
-                    .get()
-                    .then(snapshot=>{
-                        snapshot.forEach(doc=>doc.ref.delete());
-                    });
-                });
+        if(confirm("This cannot be undone!")){
 
-                toast("Leaderboard cleared");
+            const user = auth.currentUser;
+
+            if(user){
+
+                db.collection("leaderboard_all")
+                .doc(user.uid)
+                .delete();
+
+                db.collection("users")
+                .doc(user.uid)
+                .delete();
+
+                auth.signOut();
+
             }
 
             localStorage.clear();
+
             location.reload();
         }
     }
