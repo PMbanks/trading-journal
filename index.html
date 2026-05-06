@@ -22,6 +22,56 @@ font-size:14px;
 .close-btn:hover{
 background:#444;
 }
+#onlineCount{
+position:fixed;
+bottom:20px;
+right:20px;
+background:rgba(20,25,35,0.9);
+padding:10px 16px;
+border-radius:12px;
+border:1px solid rgba(255,255,255,0.1);
+z-index:100;
+font-size:14px;
+backdrop-filter:blur(10px);
+}
+#announcementScreen{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:500px;
+max-width:90%;
+background:rgba(15,20,30,0.98);
+border-radius:20px;
+padding:25px;
+z-index:3000;
+display:none;
+border:1px solid rgba(255,255,255,0.1);
+box-shadow:0 0 40px rgba(0,0,0,0.6);
+}
+
+#announcementScreen.show{
+display:block;
+animation:popup 0.25s ease;
+}
+
+#announcementContent{
+margin-top:20px;
+line-height:1.8;
+max-height:400px;
+overflow:auto;
+}
+
+@keyframes popup{
+from{
+opacity:0;
+transform:translate(-50%,-45%) scale(0.95);
+}
+to{
+opacity:1;
+transform:translate(-50%,-50%) scale(1);
+}
+}
 #profileScreen{
 position:fixed;
 top:50%;
@@ -40,7 +90,7 @@ box-shadow:0 0 50px rgba(0,0,0,0.7);
 #authScreen{
 position:fixed;
 inset:0;
-display:flex;
+display:none;
 flex-direction:column;
 align-items:center;
 justify-content:center;
@@ -733,8 +783,10 @@ transform:translateY(0);
 </div>
 <div id="leaderboard">
     <div class="lb-title">Leaderboard</div>
-<div style="margin-bottom:10px;"></div>
     <div id="scores"></div>
+</div>
+<div id="onlineCount">
+🟢 0 Online
 </div>
 <div id="rankPopup"></div>
 <div id="finalScore"></div>
@@ -753,13 +805,43 @@ transform:translateY(0);
 <div class="sidebar-item" onclick="go('gym.html')"><i data-lucide="dumbbell"></i></div>
 <div class="sidebar-item" onclick="go('trading.html')"><i data-lucide="trending-up"></i></div>
 </div>
+<div id="announcementScreen">
 
+<div style="display:flex;
+justify-content:space-between;
+align-items:center;">
+
+<h2>📢 Updates</h2>
+
+<button onclick="closeAnnouncements()"
+class="close-btn">✖</button>
+
+</div>
+
+<div id="announcementContent">
+
+<h3>Version 0.1</h3>
+
+<ul>
+<li>✅ Google login added</li>
+<li>✅ Username system</li>
+<li>✅ Global leaderboard</li>
+<li>✅ Profile system</li>
+<li>✅ Themes added</li>
+<li>✅ Username cooldown</li>
+<li>✅ Live Firebase sync</li>
+</ul>
+</div>
+</div>
 <div class="header">
 Welcome back, <span id="username"></span>
 </div>
 
 <div class="top">
     <div id="profileBtn" class="settings">👤</div>
+    <div class="settings" onclick="openAnnouncements()">
+📢
+</div>
     <div class="settings" onclick="togglePanel()">
         <i data-lucide="settings"></i>
     </div>
@@ -862,6 +944,7 @@ Welcome back, <span id="username"></span>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script> 
 function loginGoogle(){
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -894,6 +977,15 @@ function checkUsername(user){
         }
     });
 }
+function openAnnouncements(){
+document.getElementById("announcementScreen")
+.classList.add("show");
+}
+
+function closeAnnouncements(){
+document.getElementById("announcementScreen")
+.classList.remove("show");
+}
 function changeName(){
 
     const n1 = document.getElementById("n1").value.trim().toLowerCase();
@@ -903,15 +995,15 @@ function changeName(){
         toast("Names do not match");
         return;
     }
+if(n1.length < 3){
+    toast("Name too short");
+    return;
+}
 
-    if(n1.length < 3){
-        if(!/[a-zA-Z]/.test(username)){
+if(!/[a-zA-Z]/.test(n1)){
     toast("Must contain letters");
     return;
 }
-        toast("Name too short");
-        return;
-    }
 
     const user = auth.currentUser;
 
@@ -968,6 +1060,7 @@ function changeName(){
 });
 
                 toast("Name changed ✅");
+                applyUsername(n1);
 
                 updateNameCooldown();
             });
@@ -1001,14 +1094,15 @@ function saveUsername(){
         toast("Enter username");
         return;
     }
+if(username.length < 3){
+    toast("Username too short");
+    return;
+}
 
-    if(username.length < 3){if(!/[a-zA-Z]/.test(username)){
+if(!/[a-zA-Z]/.test(username)){
     toast("Must contain letters");
     return;
 }
-        toast("Username too short");
-        return;
-    }
 
     if(!/^[a-zA-Z0-9_]+$/.test(username)){
         toast("Only letters, numbers, _");
@@ -1065,15 +1159,42 @@ apiKey: "AIzaSyA7wlGw9itPf3rLzzCuFzcJyiNFHT5k6F8",
 firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
     const db = firebase.firestore();
+const rtdb = firebase.database();
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 auth.onAuthStateChanged(user=>{
 
-    if(!user){
-        document.getElementById("authScreen").style.display = "flex";
-        return;
+    if(user){
+
+        const userStatusRef =
+        rtdb.ref("online/" + user.uid);
+
+        userStatusRef.set(true);
+
+        userStatusRef.onDisconnect().remove();
+
+        checkUsername(user);
+
+    } else {
+
+        setTimeout(()=>{
+
+            if(!auth.currentUser){
+                document.getElementById("authScreen").style.display = "flex";
+            }
+
+        },500);
+
     }
 
-    checkUsername(user);
+});
+
+rtdb.ref("online").on("value",snap=>{
+
+    const count = snap.numChildren();
+
+    document.getElementById("onlineCount")
+    .innerText = `🟢 ${count} Online`;
+
 });
 let previousPosition = null;
 let currentBoard = "leaderboard_all";
@@ -1401,7 +1522,7 @@ function openProfile(){
 
                 const d = doc.data();
 
-                if(d.uid === user.uid){
+                if(doc.id === user.uid){
                     rank = index + 1;
                     bestScore = d.score || 0;
 
@@ -1419,9 +1540,11 @@ function openProfile(){
             document.getElementById("profileStats").innerHTML = `
 👤 ${u.username}<br><br>
 
-📧 ${u.email || "Hidden"}<br><br>
+<div style="font-size:14px;opacity:0.8;">
+📧 ${u.email || "Hidden"}
+</div>
 
-🌍 Global Rank: #${rank}<br><br>
+🌍 Global Rank: ${rank ? "#" + rank : "Unranked"}
 
 🏆 Points: ${bestScore}<br><br>
 
