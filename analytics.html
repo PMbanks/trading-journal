@@ -8,106 +8,180 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .sidebar {
-            position: fixed;
-            left: 0; top: 0; bottom: 0;
-            width: 90px;
-            background: rgba(13, 17, 23, 0.95);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(48, 54, 61, 0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 0;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-        .sidebar-item {
-            display: flex; align-items: center; justify-content: center;
-            width: 50px; height: 50px;
-            border-radius: 14px;
-            font-size: 1.3rem;
-            text-decoration: none;
-            color: #8b949e;
-            margin-bottom: 10px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sidebar-item:hover { background: rgba(33, 38, 45, 0.8); color: #fff; transform: scale(1.1) translateX(2px); }
-        .sidebar-item.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
-        .sidebar-big { font-size: 1.8rem !important; background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin-bottom: 25px; }
-        .sidebar-divider { width: 50%; border-top: 1px solid rgba(48, 54, 61, 0.5); margin: 10px 0; }
-        body { padding-left: 110px !important; }
-        
-        :root {
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #111111;
-            --bg-card: #1a1a1a;
-            --text-primary: #ffffff;
-            --text-secondary: #888888;
-            --border-color: #2a2a2a;
-            --accent-blue: #2196f3;
-            --accent-green: #00c853;
-            --accent-purple: #7c4dff;
-            --accent-red: #ff5252;
-            --accent-warn: #ff9800;
-        }
-        .theme-white { --bg-primary:#f0f2f5; --bg-secondary:#ffffff; --bg-card:#ffffff; --text-primary:#1a1a1a; --text-secondary:#6c757d; --border-color:#dee2e6; --accent-blue:#007bff; --accent-green:#28a745; --accent-purple:#6f42c1; --accent-red:#dc3545; --accent-warn:#fd7e14; }
-        .theme-darkblue { --bg-primary:#0a1628; --bg-secondary:#0d1f3c; --bg-card:#1a3a5c; --text-primary:#e0e0e0; --text-secondary:#8ab4d8; --border-color:#1e3a5f; --accent-blue:#42a5f5; --accent-green:#00e676; --accent-purple:#b39ddb; --accent-red:#ef5350; --accent-warn:#ffa726; }
-        .theme-black { --bg-primary:#0a0a0a; --bg-secondary:#111111; --bg-card:#1a1a1a; --text-primary:#ffffff; --text-secondary:#888888; --border-color:#2a2a2a; --accent-blue:#2196f3; --accent-green:#00c853; --accent-purple:#7c4dff; --accent-red:#ff5252; --accent-warn:#ff9800; }
-        .theme-purple { --bg-primary:#1a0a2e; --bg-secondary:#2d1b4e; --bg-card:#3d2b5e; --text-primary:#e8d5f5; --text-secondary:#b794d4; --border-color:#4a2c7a; --accent-blue:#7c4dff; --accent-green:#69f0ae; --accent-purple:#ce93d8; --accent-red:#ff6e6e; --accent-warn:#ffb74d; }
-        .theme-darkred { --bg-primary:#1a0505; --bg-secondary:#2b0a0a; --bg-card:#3d1212; --text-primary:#ffe6e6; --text-secondary:#a87b7b; --border-color:#5c1a1a; --accent-blue:#64b5f6; --accent-green:#66bb6a; --accent-purple:#ba68c8; --accent-red:#ef5350; --accent-warn:#ffb74d; }
-        .theme-darkbrown { --bg-primary:#1e120e; --bg-secondary:#331f17; --bg-card:#4a2d22; --text-primary:#e8dcd4; --text-secondary:#a89480; --border-color:#5c3a26; --accent-blue:#64b5f6; --accent-green:#81c784; --accent-purple:#ba68c8; --accent-red:#e57373; --accent-warn:#ffb74d; }
-        
+ .sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+
+    width:230px;
+
+   background:var(--bg-card);
+    backdrop-filter:blur(14px);
+
+    border-right:1px solid rgba(255,255,255,.06);
+
+    display:flex;
+    flex-direction:column;
+
+    padding:24px 18px;
+
+    z-index:1000;
+}
+
+.sidebar-logo{
+    text-decoration:none;
+
+    color:#fff;
+
+    font-size:1.3rem;
+    font-weight:800;
+
+    padding:14px 18px;
+
+    border-radius:18px;
+
+background:linear-gradient(135deg,var(--accent-soft),var(--bg-secondary));
+    text-align:center;
+
+    margin-bottom:24px;
+}
+
+.sidebar-divider{
+    width:100%;
+    height:1px;
+
+    background:rgba(255,255,255,.08);
+
+    margin-bottom:18px;
+}
+
+.sidebar-link{
+    text-decoration:none;
+
+    color:#94a3b8;
+
+    font-size:.95rem;
+    font-weight:600;
+
+    padding:14px 18px;
+
+    border-radius:14px;
+
+    transition:.25s;
+
+    margin-bottom:8px;
+}
+
+.sidebar-link:hover{
+    background:rgba(255,255,255,.05);
+
+    color:#fff;
+
+    transform:translateX(4px);
+}
+
+.sidebar-link.active{
+background:linear-gradient(135deg,var(--accent-soft),var(--bg-secondary));
+    color:#fff;
+
+box-shadow:0 0 18px rgba(0,0,0,.25);}
+:root{
+    --bg-primary:#0f172a;
+    --bg-secondary:#1e293b;
+
+    --bg-card:rgba(15,23,42,.75);
+
+    --text-primary:#f8fafc;
+    --text-secondary:#94a3b8;
+
+    --border-color:rgba(255,255,255,.08);
+
+    --accent-main:#6366f1;
+    --accent-soft:#8b5cf6;
+
+    --accent-green:#22c55e;
+    --accent-red:#ef4444;
+    --accent-warn:#f59e0b;
+    --accent-blue:#3b82f6;
+}
+.theme-darkred{
+    --bg-primary:#090303;
+    --bg-secondary:#140707;
+
+    --bg-card:rgba(20,8,8,.92);
+
+    --text-primary:#f5f5f5;
+    --text-secondary:#b9a8a8;
+
+    --accent-main:#8b5a5a;
+    --accent-soft:#5b1d1d;
+}
+.theme-darkblue{
+    --bg-primary:#071120;
+    --bg-secondary:#0f1c2e;
+
+    --bg-card:rgba(10,20,35,.9);
+
+    --accent-main:#3b82f6;
+    --accent-soft:#2563eb;
+}
+
+.theme-purple{
+    --bg-primary:#14071f;
+    --bg-secondary:#221033;
+
+    --bg-card:rgba(30,15,50,.88);
+
+    --accent-main:#8b5cf6;
+    --accent-soft:#6d28d9;
+}
+
+.theme-black{
+    --bg-primary:#050505;
+    --bg-secondary:#101010;
+
+    --bg-card:rgba(15,15,15,.95);
+
+    --accent-main:#666;
+    --accent-soft:#333;
+}
         * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            padding: 20px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 50%, rgba(33, 150, 243, 0.05) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 80%, rgba(124, 77, 255, 0.03) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-primary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-        .loading-screen.hidden { opacity:0; visibility:hidden; }
-        .loader {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--border-color);
-            border-top: 4px solid var(--accent-blue);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
+body{
+    font-family:'Inter',sans-serif;
+
+  background:var(--bg-primary);  
+
+    color:var(--text-primary);
+
+    min-height:100vh;
+
+    padding:40px;
+
+    padding-left:250px;
+
+    overflow-x:hidden;
+
+    position:relative;
+}
+body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+
+    background:
+    radial-gradient(circle at top left,
+    rgba(255,255,255,.05),
+    transparent 30%),
+
+    radial-gradient(circle at bottom right,
+    rgba(255,255,255,.03),
+    transparent 35%);
+
+    pointer-events:none;
+}
         .container {
-            max-width: 1200px;
+            max-width: 1500px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -129,8 +203,7 @@
         h1 {
             font-size: 2rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 100%);
-            -webkit-background-clip: text;
+background:linear-gradient(135deg,#ffffff 0%,var(--accent-main) 100%);           -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             letter-spacing: -0.5px;
@@ -143,24 +216,9 @@
             gap: 12px;
             align-items: center;
         }
-        .theme-btn {
-            background: rgba(26, 26, 26, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 10px 18px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-        }
         .theme-btn:hover {
             transform: translateY(-2px);
-            border-color: var(--accent-blue);
+            border-color:var(--accent-main);
         }
         
         /* Stats Grid */
@@ -171,8 +229,7 @@
             margin-bottom: 30px;
         }
         .stat-card {
-            background: rgba(26, 26, 26, 0.6);
-            backdrop-filter: blur(10px);
+background:var(--bg-card);          backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 24px 20px;
@@ -181,7 +238,7 @@
         }
         .stat-card:hover {
             transform: translateY(-4px);
-            border-color: var(--accent-blue);
+            border-color:var(--accent-main);
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
         .stat-card h3 {
@@ -208,10 +265,9 @@
         
         /* Rule Adherence Section */
         .rule-section {
-            background: rgba(26, 26, 26, 0.6);
-            backdrop-filter: blur(10px);
+background:var(--bg-card);            backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 24px;
             margin-bottom: 30px;
         }
@@ -236,7 +292,7 @@
         }
         .rule-stat {
             text-align: center;
-            background: rgba(0,0,0,0.2);
+            background:rgba(255,255,255,.03);
             padding: 10px 20px;
             border-radius: 12px;
         }
@@ -280,7 +336,7 @@
             margin-bottom: 30px;
         }
         .session-card {
-            background: rgba(26, 26, 26, 0.6);
+            background:var(--bg-card);
             backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
             border-radius: 18px;
@@ -290,14 +346,13 @@
         }
         .session-card:hover {
             transform: translateY(-3px);
-            border-color: var(--accent-blue);
+            border-color:var(--accent-main);
         }
         .session-card h4 {
             font-size: 1rem;
             font-weight: 700;
             margin-bottom: 12px;
-            color: var(--accent-blue);
-        }
+color:var(--accent-main);        }
         .session-card .wr {
             font-size: 1.8rem;
             font-weight: 800;
@@ -313,7 +368,7 @@
         }
         
         .chart-container {
-            background: rgba(26, 26, 26, 0.6);
+           background:var(--bg-card);
             backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
             border-radius: 20px;
@@ -322,8 +377,7 @@
             transition: all 0.3s ease;
         }
         .chart-container:hover {
-            border-color: var(--accent-blue);
-        }
+border-color:var(--accent-main);       }
         .chart-container h4 {
             font-size: 0.9rem;
             font-weight: 600;
@@ -389,8 +443,7 @@
         }
         .theme-option:hover {
             transform: scale(1.05);
-            border-color: var(--accent-blue);
-        }
+border-color:var(--accent-main);       }
         .close-theme-btn {
             background: transparent;
             border: 1px solid var(--border-color);
@@ -401,14 +454,37 @@
             font-size: 0.85rem;
             transition: all 0.2s;
         }
-        .close-theme-btn:hover {
-            border-color: var(--accent-blue);
-            color: var(--accent-blue);
-        }
-        
         @media (max-width: 768px) {
-            body { padding-left: 20px !important; }
-            .sidebar { display: none; }
+.sidebar{
+    width:78px;
+    padding:15px 10px;
+}
+
+.sidebar-logo{
+    font-size:0;
+    height:50px;
+}
+
+.sidebar-logo::after{
+    content:"D";
+    font-size:1.1rem;
+}
+
+.sidebar-link{
+    font-size:.72rem;
+    padding:10px 6px;
+    text-align:center;
+    height:auto;
+}
+
+.sidebar-link.active{
+    transform:none;
+}
+
+body{
+    padding:20px;
+    padding-left:100px;
+}
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .session-grid { grid-template-columns: 1fr; }
             .theme-options { grid-template-columns: repeat(2, 1fr); }
@@ -416,26 +492,49 @@
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <a href="index.html" class="sidebar-item sidebar-big" title="Main Menu">🏠</a>
-        <a href="trading.html" class="sidebar-item sidebar-big" title="Trading Hub">📈</a>
-        <div class="sidebar-divider"></div>
-        <a href="calendar.html" class="sidebar-item" title="Calendar">📅</a>
-        <a href="journal.html" class="sidebar-item" title="Journal">📝</a>
-        <a href="propfirms.html" class="sidebar-item" title="Propfirms">💼</a>
-        <a href="rules.html" class="sidebar-item" title="Rules">⚙️</a>
-        <a href="analytics.html" class="sidebar-item active" title="Analytics">📊</a>
-        <a href="payouts.html" class="sidebar-item" title="Payouts">💰</a>
-    </div>
+<div class="sidebar">
 
-    <div class="container">
-        <div class="header">
-            <h1>📊 Trading Analytics</h1>
-            <div class="header-controls">
-                <button class="theme-btn" id="themeBtn">🎨 Themes</button>
-            </div>
-        </div>
-        
+    <a href="index.html" class="sidebar-logo">
+        Dashboard
+    </a>
+
+    <div class="sidebar-divider"></div>
+
+    <a href="trading.html" class="sidebar-link">
+        Trading
+    </a>
+
+    <a href="calendar.html" class="sidebar-link">
+        Calendar
+    </a>
+
+    <a href="journal.html" class="sidebar-link">
+        Journal
+    </a>
+
+    <a href="propfirms.html" class="sidebar-link">
+        Prop Firms
+    </a>
+
+    <a href="rules.html" class="sidebar-link">
+        Rules
+    </a>
+
+    <a href="analytics.html" class="sidebar-link active">
+        Analytics
+    </a>
+
+    <a href="payouts.html" class="sidebar-link">
+        Payouts
+    </a>
+
+</div>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Trading Analytics</h1>
+    </div>
         <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card blue">
@@ -459,15 +558,15 @@
         <!-- Rule Adherence Section -->
         <div class="rule-section">
             <div class="rule-header">
-                <h3>📋 Rule Adherence</h3>
+                <h3>Rule Adherence</h3>
                 <div class="rule-stats">
                     <div class="rule-stat">
                         <div class="number" id="currentStreak">0</div>
-                        <div class="label">🔥 Current Streak</div>
+                        <div class="label">Current Streak</div>
                     </div>
                     <div class="rule-stat">
                         <div class="number" id="bestStreak">0</div>
-                        <div class="label">🏆 Best Streak</div>
+                        <div class="label">Best Streak</div>
                     </div>
                 </div>
             </div>
@@ -485,20 +584,20 @@
             </div>
         </div>
         
-        <h3 style="margin-bottom:15px; font-size:1.1rem;">📊 Session Performance</h3>
+        <h3 style="margin-bottom:15px; font-size:1.1rem;">Session Performance</h3>
         <div class="session-grid">
             <div class="session-card">
-                <h4>🇬🇧 London</h4>
+                <h4>London</h4>
                 <div class="wr" id="lonWR">0%</div>
                 <div class="meta"><span>Win Rate</span><span id="lonTrades">0 trades</span></div>
             </div>
             <div class="session-card">
-                <h4>🇺🇸 New York</h4>
+                <h4>New York</h4>
                 <div class="wr" id="nyWR">0%</div>
                 <div class="meta"><span>Win Rate</span><span id="nyTrades">0 trades</span></div>
             </div>
             <div class="session-card">
-                <h4>🇯🇵 Asia</h4>
+                <h4>Asia</h4>
                 <div class="wr" id="asiaWR">0%</div>
                 <div class="meta"><span>Win Rate</span><span id="asiaTrades">0 trades</span></div>
             </div>
@@ -511,76 +610,11 @@
             </div>
         </div>
     </div>
-
-    <!-- Theme Modal -->
-    <div id="themeModal" class="theme-modal">
-        <div class="theme-modal-content">
-            <h3>🎨 Choose Your Theme</h3>
-            <div class="theme-options">
-                <div class="theme-option" data-theme="black" style="background:#0d0d0d;"></div>
-                <div class="theme-option" data-theme="white" style="background:#f5f5f5;"></div>
-                <div class="theme-option" data-theme="darkblue" style="background:#0a1628;"></div>
-                <div class="theme-option" data-theme="purple" style="background:#1a0a2e;"></div>
-                <div class="theme-option" data-theme="darkred" style="background:#1a0505;"></div>
-                <div class="theme-option" data-theme="darkbrown" style="background:#1e120e;"></div>
-            </div>
-            <button class="close-theme-btn" id="closeThemeBtn">Close</button>
-        </div>
-    </div>
-
     <script>
-        // ============ THEME SYSTEM ============
-        function setTheme(theme) {
-            document.body.className = 'theme-' + theme;
-            localStorage.setItem('theme', theme);
-            // Refresh chart colors
-            if (sessionChart) {
-                updateChartColors();
-            }
-        }
-        
-        function applySavedTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'black';
-            document.body.className = 'theme-' + savedTheme;
-        }
-        
-        applySavedTheme();
-        
-        // Theme modal handlers
-        const themeBtn = document.getElementById('themeBtn');
-        const themeModal = document.getElementById('themeModal');
-        const closeThemeBtn = document.getElementById('closeThemeBtn');
-        
-        themeBtn.onclick = () => {
-            themeModal.classList.add('active');
-        };
-        
-        closeThemeBtn.onclick = () => {
-            themeModal.classList.remove('active');
-        };
-        
-        document.querySelectorAll('.theme-option').forEach(el => {
-            el.onclick = () => {
-                setTheme(el.dataset.theme);
-                themeModal.classList.remove('active');
-            };
-        });
-        
-        window.onclick = (e) => {
-            if (e.target === themeModal) {
-                themeModal.classList.remove('active');
-            }
-        };
-        
-        function updateChartColors() {
-            const textColor = getComputedStyle(document.body).getPropertyValue('--text-secondary').trim();
-            if (sessionChart) {
-                sessionChart.options.plugins.legend.labels.color = textColor;
-                sessionChart.update();
-            }
-        }
-        
-        // ============ ANALYTICS LOGIC with Rule Adherence ============
+const savedTheme =
+localStorage.getItem("theme") || "theme-black";
+
+document.body.className = savedTheme;
         const trades = JSON.parse(localStorage.getItem('trades')) || [];
         
         // 1. Total Trades & Win Rate & Total P/L
@@ -692,7 +726,13 @@
                 labels: ['London', 'New York', 'Asia'],
                 datasets: [{
                     data: [sessionData['London'] || 0, sessionData['New York'] || 0, sessionData['Asia'] || 0],
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+ backgroundColor: [
+getComputedStyle(document.documentElement)
+.getPropertyValue('--accent-main').trim(),
+
+'#22c55e',
+'#f59e0b'
+],
                     borderWidth: 0,
                     hoverOffset: 8
                 }]
@@ -726,15 +766,7 @@
                     }
                 }
             }
-        });
-        
-        updateChartColors();
-        
-        // Add loading screen hide
-        window.addEventListener('load', () => setTimeout(() => {
-            const ls = document.getElementById('loadingScreen');
-            if (ls) ls.classList.add('hidden');
-        }, 500));
-    </script>
+        });   
+    </script> 
 </body>
 </html>
