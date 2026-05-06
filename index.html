@@ -9,6 +9,41 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <style>
+    /* MOBILE FIXES */
+@media (max-width: 768px){
+
+.top{
+right:15px !important;
+top:15px;
+}
+
+.sidebar{
+width:70px;
+}
+
+.header{
+left:90px;
+font-size:1.3rem;
+}
+
+#leaderboard{
+left:85px;
+bottom:15px;
+min-width:180px;
+font-size:12px;
+}
+
+.card{
+width:220px;
+height:180px;
+}
+
+.menu{
+gap:30px;
+flex-direction:column;
+}
+
+}
     .close-btn{
 background:#222;
 border:none;
@@ -1150,6 +1185,7 @@ const firebaseConfig = {
 apiKey: "AIzaSyA7wlGw9itPf3rLzzCuFzcJyiNFHT5k6F8",   
   authDomain: "dashboard-game-pm.firebaseapp.com",
   projectId: "dashboard-game-pm",
+  databaseURL: "https://dashboard-game-pm-default-rtdb.europe-west1.firebasedatabase.app",
   storageBucket: "dashboard-game-pm.firebasestorage.app",
   messagingSenderId: "613826344552",
   appId: "1:613826344552:web:430a4285a3e99bd0d66ddd",
@@ -1396,20 +1432,45 @@ function animateClimbVisual(newRank){
     },120);
 }
 function endGame(){
-    
+
     clearInterval(timer);
     gameActive = false;
 
-    const rank = "#";
     showFinalScore(score);
-if(score > maxScore){
-    maxScore = score;
-    localStorage.setItem("maxScore", maxScore);
 
-    updateLeaderboard(score);
-    showHighScore(); // 🔥 NEW
-}
-    showRank(rank, score);
+    if(score > maxScore){
+
+        maxScore = score;
+
+        localStorage.setItem("maxScore", maxScore);
+
+        updateLeaderboard(score);
+
+        showHighScore();
+    }
+
+    // calculate real rank
+    db.collection("leaderboard_all")
+    .orderBy("score","desc")
+    .get()
+    .then(snapshot=>{
+
+        let rank = 1;
+
+        snapshot.forEach(doc=>{
+
+            const d = doc.data();
+
+            if(score < d.score){
+                rank++;
+            }
+
+        });
+
+        showRank("#" + rank, score);
+
+    });
+
 }
 function updateLeaderboard(score){
     const user = auth.currentUser;
