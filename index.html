@@ -733,13 +733,7 @@ transform:translateY(0);
 </div>
 <div id="leaderboard">
     <div class="lb-title">Leaderboard</div>
-
-    <div style="margin-bottom:10px;">
-        <button onclick="switchBoard('leaderboard_all')">All</button>
-        <button onclick="switchBoard('leaderboard_weekly')">Week</button>
-        <button onclick="switchBoard('leaderboard_daily')">Day</button>
-    </div>
-
+<div style="margin-bottom:10px;"></div>
     <div id="scores"></div>
 </div>
 <div id="rankPopup"></div>
@@ -1062,7 +1056,7 @@ auth.onAuthStateChanged(user=>{
     checkUsername(user);
 });
 let previousPosition = null;
-let currentBoard = localStorage.getItem("currentBoard") || "leaderboard_all";
+let currentBoard = "leaderboard_all";
 const scoresDiv = document.getElementById("scores");
 db.collection(currentBoard)
 .orderBy("score", "desc")
@@ -1121,18 +1115,6 @@ ${data.avatar
     }, 150);
 
 });
-
-//if(!lastReset || now - lastReset > week){
-    //localStorage.setItem("lastReset", now);
-
-//["leaderboard_all","leaderboard_daily","leaderboard_weekly"].forEach(col=>{
-    //db.collection(col).get().then(snapshot=>{
-    //    snapshot.forEach(doc=>doc.ref.delete());
-   // });
-//});
-
-   // console.log("Weekly reset done");
-//}
     function animateClimb(oldPos, newPos){
     let steps = Math.abs(oldPos - newPos);
     let direction = oldPos > newPos ? "↑" : "↓";
@@ -1154,10 +1136,6 @@ function saveToBoard(collection, data){
             ref.set(data);
         }
     });
-}
-function switchBoard(board){
-    localStorage.setItem("currentBoard", board);
-    location.reload();
 }
 function updateNameCooldown(){
     const el = document.getElementById("nameCooldown");
@@ -1215,7 +1193,7 @@ function startGame(){
     },1000);
 }
 function showProfile(){
-   const username = auth.currentUser?.email;
+   const user = auth.currentUser;
 if(!username) return;
 
     db.collection("profiles").doc(username).get().then(doc=>{
@@ -1228,14 +1206,6 @@ if(!username) return;
         const d = doc.data();
 
         const box = document.getElementById("profileBox");
-box.innerHTML = `
-👤 ${auth.currentUser.email}<br>
-📧 ${auth.currentUser.email}<br>
-🎮 Games: ${d.games}<br>
-🏆 Best: ${d.best}<br>
-📊 Avg: ${Math.floor(d.totalScore / d.games)}
-`;
-
         box.classList.add("show");
 
         setTimeout(()=>{
@@ -1283,8 +1253,6 @@ if(score > maxScore){
     localStorage.setItem("maxScore", maxScore);
 
     updateLeaderboard(score);
-    saveProfile(score);
-
     showHighScore(); // 🔥 NEW
 }
     showRank(rank, score);
@@ -1295,11 +1263,11 @@ function updateLeaderboard(score){
 
     db.collection("users").doc(user.uid).get().then(doc=>{
         const username = doc.exists ? doc.data().username : "User";
-
-        const data = {
-            name: username,
-            score: score
-        };
+const data = {
+    name: username,
+    score: score,
+    date: Date.now()
+};
 
         saveToBoard("leaderboard_all", data);
     });
@@ -1316,35 +1284,6 @@ el.classList.add("show");
 setTimeout(()=>{
     el.classList.remove("show");
 },3000);
-}
-function saveProfile(score){
-const username = auth.currentUser?.email;    if(!username) return;
-
-    const ref = db.collection("profiles").doc(username);
-
-    ref.get().then(doc=>{
-        let d = doc.exists ? doc.data() : {
-            games:0,
-            totalScore:0,
-            best:0,
-            bestWeek:0,
-            lastWeek:0,
-            bestRank:999,
-            bestDate:0
-        };
-
-        d.games += 1;
-        d.totalScore += score;
-
-        if(score > d.best){
-            d.best = score;
-            d.bestDate = Date.now();
-        }
-
-        d.bestWeek = Math.max(d.bestWeek, score);
-
-        ref.set(d);
-    });
 }
 function showFinalScore(score){
     const el = document.getElementById("finalScore");
@@ -1404,15 +1343,63 @@ function togglePanel(){
     document.body.classList.toggle("panel-open");
 }
 function openProfile(){
-    const username = auth.currentUser?.email;
-    if(!username) return;
 
-    db.collection("profiles").doc(username).get().then(doc=>{
-if(!doc.exists){
-    document.getElementById("profileStats").innerHTML = "No data yet";
-    document.getElementById("profileScreen").classList.add("show");
-    return;
-}        
+    const user = auth.currentUser;
+    if(!user) return;
+
+    db.collection("users").doc(user.uid).get().then(userDoc=>{
+
+        if(!userDoc.exists) return;
+
+        const u = userDoc.data();
+
+        db.collection("leaderboard_all")
+        .orderBy("score","desc")
+        .get()
+        .then(snapshot=>{
+
+            let rank = 0;
+            let bestScore = 0;
+            let bestDate = "Unknown";
+
+            snapshot.forEach((doc,index)=>{
+
+                const d = doc.data();
+
+                if(d.name === u.username){
+                    rank = index + 1;
+                    bestScore = d.score || 0;
+
+                    if(d.date){
+                        bestDate = new Date(d.date)
+                        .toLocaleDateString();
+                    }
+                }
+            });
+
+            const created = u.createdAt
+            ? new Date(u.createdAt).toLocaleDateString()
+            : "Unknown";
+
+            document.getElementById("profileStats").innerHTML = `
+👤 ${u.username}<br><br>
+
+🌍 Global Rank: #${rank}<br><br>
+
+🏆 Points: ${bestScore}<br><br>
+
+📅 Best Score Date: ${bestDate}<br><br>
+
+🕒 Account Created: ${created}
+`;
+
+            document.getElementById("profileScreen")
+            .classList.add("show");
+
+        });
+
+    });
+}
 
         const d = doc.data();
         const avg = Math.floor(d.totalScore / d.games);
@@ -1422,14 +1409,9 @@ document.getElementById("profileStats").innerHTML = `
 👤 ${d.username || "User"}<br><br>
 📧 ${user.email}<br><br>
 🏆 Best Ever: ${d.best}<br>
-📅 Best Week: ${d.bestWeek}<br>
-📊 Avg Score: ${avg}<br>
-🎮 Games Played: ${d.games}<br>
 ⏱ Best Run: ${new Date(d.bestDate).toLocaleDateString()}
 `;
         document.getElementById("profileScreen").classList.add("show");
-    });
-}
 function openPage(id){
     if(id === "name"){
     updateNameCooldown();
@@ -1441,7 +1423,7 @@ function resetAll(){
     if(confirm("Reset everything? This will also delete your leaderboard score.")){
         if(confirm("This cannot be undone! Continue?")){
 
-            const username = auth.currentUser?.email;
+           const user = auth.currentUser;
 
             if(username){
                 ["leaderboard_all","leaderboard_daily","leaderboard_weekly"].forEach(col=>{
