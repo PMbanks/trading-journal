@@ -1301,8 +1301,9 @@ ${data.avatar
         </div>
         <span class="lb-name">${crown}#${rank} ${data.name}</span>
     </div>
-    <span class="score">🏆 ${data.score}</span>
-</div>
+<span class="score">
+🏆 ${data.score} • ${data.accuracy || 0}%
+</span></div>
 `;
         });
 
@@ -1486,21 +1487,23 @@ function endGame(){
     });
 
 }
-function updateLeaderboard(score){
-    const user = auth.currentUser;
-    if(!user) return;
+function updateLeaderboard(score, accuracy){
+    const username = localStorage.getItem("username") || "Anonymous";
+    const photo = localStorage.getItem("photo") || null;
 
-    db.collection("users").doc(user.uid).get().then(doc=>{
-        const username = doc.exists ? doc.data().username : "User";
-const data = {
-    uid: user.uid,
-    name: username,
-    score: score,
-    date: Date.now(),
-    photo: user.photoURL || ""
-};
+    const userRef = db.collection("leaderboard").doc(username);
 
-        saveToBoard("leaderboard_all", data);
+    userRef.get().then(doc=>{
+        if(!doc.exists || score > doc.data().score){
+            userRef.set({
+                name: username,
+                score: score,
+                accuracy: accuracy,
+                photo: photo,
+                avatar: localStorage.getItem("avatar") || null,
+                time: Date.now()
+            });
+        }
     });
 }
 function showHighScore(){
